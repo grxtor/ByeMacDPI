@@ -1,0 +1,190 @@
+import Foundation
+import Combine
+
+class ServiceManager: ObservableObject {
+    @Published var isRunning: Bool = false
+    @Published var statusMessage: String = "Sistem Hazır"
+    @Published var pingResults: [String: String] = [:] 
+    @Published var autoStartEnabled: Bool = false
+    @Published var connectionTime: Int = 0
+    
+    private var timer: Timer?
+    private let plistName = "com.user.byedpi.plist"
+    
+    private var plistPath: String {
+        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
+        return libraryPath.appendingPathComponent("LaunchAgents/\(plistName)").path
+    }
+    
+    private let byedpiDetails = (
+        path: "/Users/abdullah/.byedpi/ciadpi",
+        args: ["-r", "1+s"]
+    )
+    
+    init() {
+        checkStatus()
+        checkAutoStartStatus()
+        if isRunning { startTimer() }
+    }
+    
+    func checkAutoStartStatus() {
+        autoStartEnabled = FileManager.default.fileExists(atPath: plistPath)
+    }
+    
+    func toggleAutoStart() {
+        if autoStartEnabled { disableAutoStart() } else { enableAutoStart() }
+    }
+    
+    func enableAutoStart() {
+        createPlist()
+        autoStartEnabled = true
+    }
+    
+    func disableAutoStart() {
+        try? FileManager.default.removeItem(atPath: plistPath)
+        autoStartEnabled = false
+    }
+    
+    func checkStatus() {
+        let process = Process()
+        process.launchPath = "/usr/bin/pgrep"
+        process.arguments = ["-x", "ciadpi"]
+        
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            DispatchQueue.main.async {
+                let running = (process.terminationStatus == 0)
+                if running != self.isRunning {
+                    self.isRunning = running
+                    if running { self.startTimer() } else { self.stopTimer() }
+                }
+                self.statusMessage = self.isRunning ? "ByeDPI Aktif" : "ByeDPI Kapalı"
+            }
+        } catch {
+            print("Status check error: \(error)")
+        }
+    }
+    
+    func toggleService() {
+        if isRunning { stopService() } else { startService() }
+    }
+    
+    func startService() {
+        createPlist()
+        runCommand("/bin/launchctl", args: ["load", plistPath])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
+            self.checkStatus()
+        }
+    }
+    
+    func stopService() {
+        runCommand("/bin/launchctl", args: ["unload", plistPath])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { 
+            self.checkStatus()
+        }
+    }
+    
+    func startTimer() {
+        stopTimer()
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+                self.connectionTime += 1
+            }
+        }
+    }
+    
+    func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+        connectionTime = 0
+    }
+    
+    func launchDiscord() {
+        // Launch Discord with proxy args
+        let args = [
+            "-a", "/Applications/Discord.app",
+            "--args",
+            "--proxy-server=socks5://127.0.0.1:1080",
+            "--ignore-certificate-errors"
+        ]
+        runCommand("/usr/bin/open", args: args)
+    }
+    
+    private func createPlist() {
+        let content = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>com.user.byedpi</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>\(byedpiDetails.path)</string>
+                <string>-r</string>
+                <string>1+s</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+            <key>KeepAlive</key>
+            <true/>
+            <key>StandardOutPath</key>
+            <string>/Users/abdullah/.byedpi/byedpi.log</string>
+            <key>StandardErrorPath</key>
+            <string>/Users/abdullah/.byedpi/byedpi_error.log</string>
+        </dict>
+        </plist>
+        """
+        let pathURL = URL(fileURLWithPath: plistPath)
+        try? content.write(to: pathURL, atomically: true, encoding: .utf8)
+    }
+    
+    private func runCommand(_ launchPath: String, args: [String]) {
+        let process = Process()
+        process.launchPath = launchPath
+        process.arguments = args
+        process.launch()
+        process.waitUntilExit()
+    }
+    
+    func enableSystemProxy(port: String) {
+        let service = "Wi-Fi"
+        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxy", service, "127.0.0.1", port])
+        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", service, "on"])
+    }
+    
+    func disableSystemProxy() {
+        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", "Wi-Fi", "off"])
+    }
+    
+    func pingDNS(host: String) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let process = Process()
+            process.launchPath = "/sbin/ping"
+            process.arguments = ["-c", "1", "-W", "1000", host]
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            
+            do {
+                try process.run()
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                if let output = String(data: data, encoding: .utf8),
+                   let range = output.range(of: "time=") {
+                    let time = output[range.upperBound...].prefix(while: { $0 != " " })
+                    DispatchQueue.main.async { self.pingResults[host] = "\(time) ms" }
+                } else {
+                    DispatchQueue.main.async { self.pingResults[host] = "Err" }
+                }
+            } catch {
+                DispatchQueue.main.async { self.pingResults[host] = "Fail" }
+            }
+        }
+    }
+}
