@@ -51,7 +51,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text("Giriş Sırasında Başlat")
                                     .foregroundColor(textColor)
-                                Text("macOS açıldığında ByeMacDPI servisini başlat")
+                                Text("macOS açıldığında BayMacDPI servisini başlat")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -95,7 +95,7 @@ struct SettingsView: View {
                     VStack(spacing: 12) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("ByeMacDPI")
+                                Text("BayMacDPI")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(textColor)
                                 Text("Versiyon 2.0")
@@ -118,7 +118,7 @@ struct SettingsView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "link")
                                     .foregroundColor(.blue)
-                                Link("github.com/grxtor/ByeMacDPI", destination: URL(string: "https://github.com/grxtor/ByeMacDPI")!)
+                                Link("github.com/grxtor/BayMacDPI", destination: URL(string: "https://github.com/grxtor/BayMacDPI")!)
                                     .font(.caption)
                             }
                             

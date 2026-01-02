@@ -42,7 +42,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: Build/ByeMacDPI.dmg
+          files: Build/BayMacDPI.dmg
           generate_release_notes: true
           draft: false
           prerelease: false

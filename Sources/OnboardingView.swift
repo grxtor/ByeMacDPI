@@ -27,7 +27,7 @@ struct OnboardingView: View {
                 Image(systemName: "sparkles")
                     .font(.title)
                     .foregroundColor(.blue)
-                Text("ByeMacDPI Kurulum Sihirbazı")
+                Text("BayMacDPI Kurulum Sihirbazı")
                     .font(.title2.bold())
             }
             .padding(.top, 30)

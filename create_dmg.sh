@@ -1,7 +1,7 @@
 #!/bin/bash
-# Create DMG for ByeMacDPI
+# Create DMG for BayMacDPI
 
-APP_NAME="ByeMacDPI"
+APP_NAME="BayMacDPI"
 BUILD_DIR="Build"
 DMG_NAME="$APP_NAME.dmg"
 

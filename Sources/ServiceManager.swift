@@ -19,7 +19,7 @@ class ServiceManager: ObservableObject {
     // Dynamic paths for ByeDPI
     private var appSupportDir: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("ByeMacDPI")
+        return appSupport.appendingPathComponent("BayMacDPI")
     }
     
     private var byedpiPath: String {
@@ -70,7 +70,7 @@ class ServiceManager: ObservableObject {
         // If bundle extraction failed, download from GitHub
         print("Downloading ByeDPI binary from GitHub...")
         DispatchQueue.main.async {
-            self.statusMessage = "ByeMacDPI indiriliyor..."
+            self.statusMessage = "BayMacDPI indiriliyor..."
         }
         downloadByeDPI()
     }
@@ -113,7 +113,7 @@ class ServiceManager: ObservableObject {
                 
                 print("ByeDPI binary downloaded and installed to: \(byedpiPath)")
                 DispatchQueue.main.async {
-                    self.statusMessage = "ByeMacDPI kuruldu!"
+                    self.statusMessage = "BayMacDPI kuruldu!"
                 }
             } catch {
                 print("Failed to install downloaded binary: \(error)")
@@ -166,7 +166,7 @@ class ServiceManager: ObservableObject {
                         self.connectionTime = 0
                     }
                 }
-                self.statusMessage = self.isRunning ? "ByeMacDPI Aktif" : "ByeMacDPI Kapalı"
+                self.statusMessage = self.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı"
             }
         } catch {
             print("Status check error: \(error)")

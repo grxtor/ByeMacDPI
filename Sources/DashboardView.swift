@@ -49,7 +49,7 @@ struct DashboardView: View {
                                 Circle()
                                     .fill(service.isRunning ? Color.green : Color.red)
                                     .frame(width: 8, height: 8)
-                                Text(service.isRunning ? "ByeMacDPI Aktif" : "ByeMacDPI Kapalı")
+                                Text(service.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı")
                                     .font(.title3)
                                     .bold()
                                     .foregroundColor(textColor)
