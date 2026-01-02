@@ -49,9 +49,9 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(service.isRunning ? Color.green : Color.red)
+                                    .fill(service.isRunning ? Color.green : (service.statusMessage.contains("...") ? Color.yellow : Color.red))
                                     .frame(width: 8, height: 8)
-                                Text(service.isRunning ? L("dashboard.active") : L("dashboard.inactive"))
+                                Text(service.statusMessage)
                                     .font(.title3)
                                     .bold()
                                     .foregroundColor(textColor)
