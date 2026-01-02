@@ -67,8 +67,8 @@ struct ProtocolsView: View {
                             Toggle("", isOn: $systemProxyEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .blue))
                                 .labelsHidden()
-                                .onChange(of: systemProxyEnabled) { val in
-                                    if val { service.enableSystemProxy(port: byedpiPort) }
+                                .onChange(of: systemProxyEnabled) { oldValue, newValue in
+                                    if newValue { service.enableSystemProxy(port: byedpiPort) }
                                     else { service.disableSystemProxy() }
                                 }
                         }

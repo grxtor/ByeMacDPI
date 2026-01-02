@@ -124,8 +124,8 @@ struct DashboardView: View {
                                 .toggleStyle(SwitchToggleStyle(tint: .green))
                                 .labelsHidden()
                                 .scaleEffect(0.8)
-                                .onChange(of: systemProxyEnabled) { val in
-                                    if val { service.enableSystemProxy(port: byedpiPort) }
+                                .onChange(of: systemProxyEnabled) { oldValue, newValue in
+                                    if newValue { service.enableSystemProxy(port: byedpiPort) }
                                     else { service.disableSystemProxy() }
                                 }
                         }
