@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AppKit
 
 class ServiceManager: ObservableObject {
     @Published var isRunning: Bool = false
@@ -9,11 +10,15 @@ class ServiceManager: ObservableObject {
     @Published var connectionTime: Int = 0
     
     private var timer: Timer?
-    private let plistName = "com.user.byedpi.plist"
+    private let plistName = "com.baymacdpi.service.plist"
     
     private var plistPath: String {
         let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        return libraryPath.appendingPathComponent("LaunchAgents/\(plistName)").path
+        let agentsDir = libraryPath.appendingPathComponent("LaunchAgents")
+        if !FileManager.default.fileExists(atPath: agentsDir.path) {
+            try? FileManager.default.createDirectory(at: agentsDir, withIntermediateDirectories: true)
+        }
+        return agentsDir.appendingPathComponent(plistName).path
     }
     
     // Dynamic paths for ByeDPI
@@ -23,6 +28,10 @@ class ServiceManager: ObservableObject {
     }
     
     private var byedpiPath: String {
+        // Return custom path if set and valid, otherwise fallback to default
+        if let customPath = UserDefaults.standard.string(forKey: "customBinaryPath"), !customPath.isEmpty {
+            return customPath
+        }
         return appSupportDir.appendingPathComponent("ciadpi").path
     }
     
@@ -33,6 +42,8 @@ class ServiceManager: ObservableObject {
     private var errorLogPath: String {
         return appSupportDir.appendingPathComponent("byedpi_error.log").path
     }
+    
+    var binaryPath: String { byedpiPath }
     
     init() {
         setupByeDPI()
@@ -144,32 +155,35 @@ class ServiceManager: ObservableObject {
     }
     
     func checkStatus() {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        process.arguments = ["-x", "ciadpi"]
-        
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        
-        do {
-            try process.run()
-            process.waitUntilExit()
+        DispatchQueue.global(qos: .background).async {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+            process.arguments = ["-x", "ciadpi"]
             
-            DispatchQueue.main.async {
-                let running = (process.terminationStatus == 0)
-                if running != self.isRunning {
-                    self.isRunning = running
-                    if running {
-                        self.startTimer()
-                    } else {
-                        self.stopTimer()
-                        self.connectionTime = 0
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            
+            do {
+                try process.run()
+                process.waitUntilExit()
+                
+                let isRunningNow = (process.terminationStatus == 0)
+                
+                DispatchQueue.main.async {
+                    if isRunningNow != self.isRunning {
+                        self.isRunning = isRunningNow
+                        if isRunningNow {
+                            self.startTimer()
+                        } else {
+                            self.stopTimer()
+                            self.connectionTime = 0
+                        }
                     }
+                    self.statusMessage = self.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı"
                 }
-                self.statusMessage = self.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı"
+            } catch {
+                print("Status check error: \(error)")
             }
-        } catch {
-            print("Status check error: \(error)")
         }
     }
     
@@ -179,16 +193,22 @@ class ServiceManager: ObservableObject {
     
     func startService() {
         createPlist()
-        runCommand("/bin/launchctl", args: ["load", plistPath])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { 
-            self.checkStatus()
+        // Run in background to avoid UI lag
+        Task {
+            runCommand("/bin/launchctl", args: ["bootstrap", "gui/\(getuid())", plistPath])
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { 
+                self.checkStatus()
+            }
         }
     }
     
     func stopService() {
-        runCommand("/bin/launchctl", args: ["unload", plistPath])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { 
-            self.checkStatus()
+        // Run in background to avoid UI lag
+        Task {
+            runCommand("/bin/launchctl", args: ["bootout", "gui/\(getuid())", plistPath])
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { 
+                self.checkStatus()
+            }
         }
     }
     
@@ -217,6 +237,11 @@ class ServiceManager: ObservableObject {
         runCommand("/usr/bin/open", args: args)
     }
     
+    func revealInFinder() {
+        let url = URL(fileURLWithPath: byedpiPath).deletingLastPathComponent()
+        NSWorkspace.shared.selectFile(byedpiPath, inFileViewerRootedAtPath: url.path)
+    }
+    
     private func createPlist() {
         // Read user settings from UserDefaults
         let defaults = UserDefaults.standard
@@ -229,7 +254,7 @@ class ServiceManager: ObservableObject {
         <plist version="1.0">
         <dict>
             <key>Label</key>
-            <string>com.user.byedpi</string>
+            <string>com.baymacdpi.service</string>
             <key>ProgramArguments</key>
             <array>
                 <string>\(byedpiPath)</string>
@@ -254,14 +279,17 @@ class ServiceManager: ObservableObject {
     }
     
     private func runCommand(_ launchPath: String, args: [String]) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: launchPath)
-        process.arguments = args
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            print("Command failed: \(error)")
+        // Run on background queue to keep UI responsive
+        DispatchQueue.global(qos: .userInitiated).async {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: launchPath)
+            process.arguments = args
+            do {
+                try process.run()
+                process.waitUntilExit()
+            } catch {
+                print("Command failed: \(error)")
+            }
         }
     }
     

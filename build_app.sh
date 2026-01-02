@@ -11,9 +11,9 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
 
-# Compile
-echo "Compiling Swift Sources..."
-swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/BayMacDPI" -target arm64-apple-macosx15.0 -swift-version 5
+# Compile Universal (x86_64 and arm64)
+echo "Compiling Swift Sources (Universal)..."
+swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/BayMacDPI" -target x86_64-apple-macosx13.0 -target arm64-apple-macosx13.0 -swift-version 5
 
 if [ $? -ne 0 ]; then
     echo "Compilation FAILED"
@@ -40,7 +40,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <key>CFBundleVersion</key>
     <string>2</string>
     <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
+    <string>13.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
@@ -61,6 +61,10 @@ if [ -f "$BYEDPI_SRC" ]; then
 else
     echo "Please ensure ciadpi is available in ~/.byedpi/"
 fi
+
+# Clean up metadata before signing to prevent "resource fork" errors
+echo "Cleaning metadata..."
+xattr -cr "$APP_BUNDLE"
 
 # Ad-hoc Code Signing to prevent "Damaged" error
 echo "Signing app (ad-hoc)..."

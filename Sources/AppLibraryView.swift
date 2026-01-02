@@ -9,6 +9,7 @@ struct AppLibraryView: View {
     @State private var showAddSheet = false
     @State private var editingApp: AppItem? = nil
     @State private var installedApps: [InstalledApp] = []
+    @AppStorage("didAddDefaultApps") var didAddDefaultApps: Bool = false
     
     var textColor: Color { appTheme == "light" ? .black : .white }
     var cardBg: Color { appTheme == "light" ? Color(white: 0.92) : Color(white: 0.12) }
@@ -51,33 +52,20 @@ struct AppLibraryView: View {
                 
                 // Apps Grid
                 LazyVGrid(columns: columns, spacing: 15) {
-                    // Default Discord
-                    AppCard(
-                        name: "Discord",
-                        path: "/Applications/Discord.app",
-                        isDefault: true,
-                        cardBg: cardBg,
-                        textColor: textColor,
-                        onLaunch: { service.launchDiscord() },
-                        onEdit: { 
-                            // Create a temporary AppItem for editing the default
-                            editingApp = AppItem(name: "Discord", path: "/Applications/Discord.app")
-                        },
-                        onDelete: {
-                            // In this simple version, we'll just hide it or allow removal from UI
-                            // For a more robust solution, we'd need to track 'removedDefaults'
-                        }
-                    )
-                    
-                    // User Apps
                     ForEach(apps) { app in
                         AppCard(
                             name: app.name,
                             path: app.path,
-                            isDefault: false,
                             cardBg: cardBg,
                             textColor: textColor,
-                            onLaunch: { launchApp(app) },
+                            onLaunch: { 
+                                // Specialized launch for Discord if needed, otherwise generic
+                                if app.name == "Discord" {
+                                    service.launchDiscord()
+                                } else {
+                                    launchApp(app)
+                                }
+                            },
                             onEdit: { editingApp = app },
                             onDelete: { deleteApp(app) }
                         )
@@ -110,6 +98,18 @@ struct AppLibraryView: View {
     func loadApps() {
         if let decoded = try? JSONDecoder().decode([AppItem].self, from: savedAppsData) {
             apps = decoded
+        }
+        
+        // Add default apps if first run
+        if !didAddDefaultApps {
+            let discordPath = "/Applications/Discord.app"
+            if FileManager.default.fileExists(atPath: discordPath) {
+                if !apps.contains(where: { $0.path == discordPath }) {
+                    apps.append(AppItem(name: "Discord", path: discordPath))
+                }
+            }
+            didAddDefaultApps = true
+            saveApps()
         }
     }
     
@@ -164,7 +164,6 @@ struct InstalledApp: Identifiable {
 struct AppCard: View {
     let name: String
     let path: String
-    let isDefault: Bool
     let cardBg: Color
     let textColor: Color
     let onLaunch: () -> Void
@@ -176,75 +175,63 @@ struct AppCard: View {
     
     var body: some View {
         Button(action: onLaunch) {
-            VStack(spacing: 12) {
-                // App Icon
-                AppIconView(path: path, fallbackIcon: "app.fill")
-                    .frame(width: 56, height: 56)
+            VStack(spacing: 8) {
+                ZStack {
+                    // Transparent glass background on hover
+                    if isHovered {
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(Color.white.opacity(0.05))
+                            .background(.ultraThinMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                    } else {
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(cardBg)
+                    }
+                    
+                    // Blurred Icon behind actions
+                    AppIconView(path: path, fallbackIcon: "app.fill")
+                        .frame(width: 64, height: 64)
+                        .blur(radius: isHovered ? 20 : 0)
+                        .scaleEffect(isHovered ? 1.08 : 1.0)
+                        .opacity(isHovered ? 0.7 : 1.0)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isHovered)
+                    
+                    if isHovered {
+                        // Action Buttons in Glass Pills
+                        VStack(spacing: 12) {
+                            Button(action: onEdit) {
+                                Text("Düzenle")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 95, height: 32)
+                                    .background(Color.white.opacity(0.12))
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: { showDeleteConfirm = true }) {
+                                Text("Sil")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 95, height: 32)
+                                    .background(Color.white.opacity(0.12))
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                    }
+                }
+                .frame(width: 130, height: 130)
+                .shadow(color: Color.black.opacity(isHovered ? 0.25 : 0.1), radius: isHovered ? 12 : 5, x: 0, y: 5)
                 
                 Text(name)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(textColor)
                     .lineLimit(1)
             }
-            .frame(width: 140, height: 130)
-            .background(cardBg)
-            .cornerRadius(12)
-            .overlay(
-                // Hover overlay with transparent glass effect
-                Group {
-                    if isHovered {
-                        ZStack {
-                            // Semi-transparent blur background
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.black.opacity(0.85))
-                            
-                            // Action buttons
-                            HStack(spacing: 12) {
-                                // Launch button
-                                Button(action: onLaunch) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "play.fill")
-                                            .font(.system(size: 22))
-                                        Text("Aç")
-                                            .font(.system(size: 8, weight: .medium))
-                                    }
-                                    .foregroundColor(.green)
-                                    .frame(width: 36)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                // Edit button
-                                Button(action: onEdit) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "pencil")
-                                            .font(.system(size: 22))
-                                        Text("Düzen")
-                                            .font(.system(size: 8, weight: .medium))
-                                    }
-                                    .foregroundColor(.blue)
-                                    .frame(width: 36)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                // Delete button
-                                Button(action: { showDeleteConfirm = true }) {
-                                    VStack(spacing: 4) {
-                                        Image(systemName: "trash")
-                                            .font(.system(size: 22))
-                                        Text("Sil")
-                                            .font(.system(size: 8, weight: .medium))
-                                    }
-                                    .foregroundColor(.red)
-                                    .frame(width: 36)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .transition(.opacity)
-                    }
-                }
-                .animation(.easeOut(duration: 0.15), value: isHovered)
-            )
         }
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in

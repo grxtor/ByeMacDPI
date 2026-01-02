@@ -29,10 +29,14 @@ struct BayMacDPIApp: App {
                     showOnboarding = true
                 }
             }
-            .onChange(of: hasCompletedOnboarding) { _, newValue in
+            .onChange(of: hasCompletedOnboarding) { newValue in
                 if newValue {
                     withAnimation(.easeOut(duration: 0.3)) {
                         showOnboarding = false
+                    }
+                } else {
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        showOnboarding = true
                     }
                 }
             }
