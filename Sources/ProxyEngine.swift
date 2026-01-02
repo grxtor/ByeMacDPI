@@ -39,6 +39,14 @@ class CiadpiEngine: ProxyEngine {
         let fm = FileManager.default
         let path = binaryPath
         
+        // 0. Cleanup bad binary if exists
+        if fm.fileExists(atPath: path) {
+            if let attr = try? fm.attributesOfItem(atPath: path),
+               let size = attr[.size] as? Int64, size < 100_000 {
+                try? fm.removeItem(atPath: path)
+            }
+        }
+        
         if fm.fileExists(atPath: path) { return }
         
         // 1. Try Bundle
@@ -77,6 +85,17 @@ class CiadpiEngine: ProxyEngine {
             }
             
             try fm.moveItem(at: tempURL, to: URL(fileURLWithPath: binaryPath))
+            
+            // Validation: Check size (Binary should be > 1MB usually, definitely > 10KB)
+            let attributes = try fm.attributesOfItem(atPath: binaryPath)
+            let fileSize = attributes[.size] as? Int64 ?? 0
+            
+            if fileSize < 100_000 { // Less than 100KB
+                try fm.removeItem(atPath: binaryPath)
+                print("Download invalid (too small): \(fileSize) bytes")
+                return
+            }
+            
             try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binaryPath)
             
             // Force chmod just in case
@@ -97,7 +116,7 @@ class CiadpiEngine: ProxyEngine {
         if !FileManager.default.fileExists(atPath: binaryPath) {
              await downloadBinary()
              if !FileManager.default.fileExists(atPath: binaryPath) {
-                 throw NSError(domain: "Ciadpi", code: 404, userInfo: [NSLocalizedDescriptionKey: "Binary not found and download failed."])
+                 throw NSError(domain: "Ciadpi", code: 404, userInfo: [NSLocalizedDescriptionKey: "Binary download failed or file is invalid."])
              }
         }
     
