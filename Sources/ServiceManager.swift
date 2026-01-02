@@ -154,10 +154,11 @@ class ServiceManager: ObservableObject {
     }
     
     func launchDiscord() {
+        let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
         let args = [
-            "-a", "/Applications/Discord.app",
+            "-a", "/Applications/Discord.app/Contents/MacOS/Discord",
             "--args",
-            "--proxy-server=socks5://127.0.0.1:1080",
+            "--proxy-server=socks5://127.0.0.1:\(port)",
             "--ignore-certificate-errors"
         ]
         runCommand("/usr/bin/open", args: args)
