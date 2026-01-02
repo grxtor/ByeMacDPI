@@ -32,37 +32,65 @@ class CiadpiEngine: ProxyEngine {
     var isRunning: Bool = false
     
     init() {
-        Task { await ensureBinaryExists() }
+        // No async task in init anymore. 
+        // We validate on start or manually.
     }
     
-    private func ensureBinaryExists() async {
+    private func validateAndPrepare() async throws {
         let fm = FileManager.default
         let path = binaryPath
+        let folder = URL(fileURLWithPath: path).deletingLastPathComponent()
         
-        // 0. Cleanup bad binary if exists
+        // Ensure folder exists
+        if !fm.fileExists(atPath: folder.path) {
+            try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        }
+        
+        // 1. Validation & Cleanup of existing file
         if fm.fileExists(atPath: path) {
-            if let attr = try? fm.attributesOfItem(atPath: path),
-               let size = attr[.size] as? Int64, size < 100_000 {
+            let attr = try? fm.attributesOfItem(atPath: path)
+            let size = attr?[.size] as? Int64 ?? 0
+            
+            // Re-validate size (must be > 50KB for ciadpi)
+            if size < 50_000 {
+                print("Binary invalid (\(size) bytes). Deleting...")
                 try? fm.removeItem(atPath: path)
             }
         }
         
-        if fm.fileExists(atPath: path) { return }
-        
-        // 1. Try Bundle
-        if let bundled = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
-            try? fm.copyItem(atPath: bundled, toPath: path)
-            try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path)
-            return
+        // 2. Copy from Bundle if missing
+        if !fm.fileExists(atPath: path) {
+            if let bundled = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
+                print("Copying bundled binary from: \(bundled)")
+                try? fm.copyItem(atPath: bundled, toPath: path)
+                try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path)
+            }
         }
         
-        // 2. Download Fallback
-        await downloadBinary()
+        // 3. Final Check - No download fallback, binary MUST be bundled
+        if !fm.fileExists(atPath: path) {
+             throw NSError(domain: "Ciadpi", code: 404, userInfo: [NSLocalizedDescriptionKey: "Binary not found in app bundle."])
+        }
+        
+        // 4. Permissions & Quarantine
+        try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path)
+        
+        let chmod = Process()
+        chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
+        chmod.arguments = ["+x", path]
+        try? chmod.run()
+        chmod.waitUntilExit()
+        
+        let xattr = Process()
+        xattr.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+        xattr.arguments = ["-d", "com.apple.quarantine", path]
+        try? xattr.run()
+        xattr.waitUntilExit()
     }
     
     private func downloadBinary() async {
         print("Downloading ciadpi...")
-        // Detect architecture
+        // Detect architecture (We know it's arm64 now for app, but let's keep it safe)
         #if arch(arm64)
         let binaryName = "ciadpi-macos-arm64"
         #else
@@ -96,14 +124,8 @@ class CiadpiEngine: ProxyEngine {
                 return
             }
             
+            // Set permissions here too just in case
             try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binaryPath)
-            
-            // Force chmod just in case
-            let chmod = Process()
-            chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
-            chmod.arguments = ["+x", binaryPath]
-            try? chmod.run()
-            chmod.waitUntilExit()
             
             print("Downloaded ciadpi to \(binaryPath)")
         } catch {
@@ -112,16 +134,12 @@ class CiadpiEngine: ProxyEngine {
     }
     
     func start(args: [String]) async throws {
-        // Ensure binary exists before starting
-        if !FileManager.default.fileExists(atPath: binaryPath) {
-             await downloadBinary()
-             if !FileManager.default.fileExists(atPath: binaryPath) {
-                 throw NSError(domain: "Ciadpi", code: 404, userInfo: [NSLocalizedDescriptionKey: "Binary download failed or file is invalid."])
-             }
-        }
+        // Strict sequential validation
+        try await validateAndPrepare()
     
         let task = Process()
         task.executableURL = URL(fileURLWithPath: binaryPath)
+
         task.arguments = args
         
         // Logging

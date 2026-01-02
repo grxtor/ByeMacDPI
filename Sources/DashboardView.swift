@@ -194,9 +194,17 @@ struct DashboardView: View {
     }
     
     func launchApp(_ app: AppItem) {
+        let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
+        var args = ["-a", app.path, "--args", "--proxy-server=socks5://127.0.0.1:\(port)"]
+        
+        // Add custom args if any
+        if !app.customArgs.isEmpty {
+            args += app.customArgs.split(separator: " ").map(String.init)
+        }
+        
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-a", app.path, "--args"] + app.customArgs.split(separator: " ").map(String.init).filter { $0 != "--args" }
+        task.arguments = args
         do {
             try task.run()
         } catch {

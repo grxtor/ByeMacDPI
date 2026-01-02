@@ -17,19 +17,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Environment
-        run: |
-          # Create strict directory structure expected by build script
-          mkdir -p ~/.byedpi
-          
-          # Download valid ciadpi binary for bundling (ARM64)
-          curl -L -o ~/.byedpi/ciadpi "https://github.com/hufrea/byedpi/releases/latest/download/ciadpi-macos-arm64"
-          chmod +x ~/.byedpi/ciadpi
-          
       - name: Build Application
         run: |
           chmod +x build_app.sh
-          # Run the build script
+          # Binary is now bundled in Resources/
           ./build_app.sh
 
       - name: Create DMG

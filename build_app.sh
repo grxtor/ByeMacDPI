@@ -52,14 +52,15 @@ EOF
 # PkgInfo
 echo "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
-# Copy ByeDPI binary
-BYEDPI_SRC="$HOME/.byedpi/ciadpi"
+# Copy bundled ByeDPI binary from Resources
+BYEDPI_SRC="Resources/ciadpi"
 if [ -f "$BYEDPI_SRC" ]; then
     echo "Copying ByeDPI binary..."
     cp "$BYEDPI_SRC" "$RESOURCES_DIR/ciadpi"
     chmod +x "$RESOURCES_DIR/ciadpi"
 else
-    echo "Please ensure ciadpi is available in ~/.byedpi/"
+    echo "ERROR: ciadpi binary not found in Resources/"
+    exit 1
 fi
 
 # Clean up metadata before signing to prevent "resource fork" errors
