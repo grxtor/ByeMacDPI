@@ -11,9 +11,9 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
 
-# Compile Universal (x86_64 and arm64)
-echo "Compiling Swift Sources (Universal)..."
-swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/BayMacDPI" -target x86_64-apple-macosx13.0 -target arm64-apple-macosx13.0 -swift-version 5
+# Compile for Apple Silicon (ARM64) Only
+echo "Compiling Swift Sources (ARM64)..."
+swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/BayMacDPI" -target arm64-apple-macosx13.0 -swift-version 5
 
 if [ $? -ne 0 ]; then
     echo "Compilation FAILED"

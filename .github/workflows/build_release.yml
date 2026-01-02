@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build and Release
-    runs-on: macos-15  # Using macOS 15 runner if available, or latest
+    runs-on: macos-14  # Apple Silicon (M1) Runner
     permissions:
       contents: write
 
@@ -22,9 +22,8 @@ jobs:
           # Create strict directory structure expected by build script
           mkdir -p ~/.byedpi
           
-          # Download valid ciadpi binary for bundling (Universal or x86 fallback)
-          # Using a known stable release to bundle
-          curl -L -o ~/.byedpi/ciadpi "https://github.com/hufrea/byedpi/releases/download/v0.13/ciadpi-x86_64"
+          # Download valid ciadpi binary for bundling (ARM64)
+          curl -L -o ~/.byedpi/ciadpi "https://github.com/hufrea/byedpi/releases/latest/download/ciadpi-macos-arm64"
           chmod +x ~/.byedpi/ciadpi
           
       - name: Build Application
