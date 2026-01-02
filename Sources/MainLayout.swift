@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainLayout: View {
-    @StateObject private var service = ServiceManager()
+    @EnvironmentObject var service: ServiceManager
     @State private var selectedTab: String? = "dashboard"
     @AppStorage("appTheme") var appTheme: String = "dark"
     

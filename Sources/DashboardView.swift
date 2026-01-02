@@ -197,21 +197,13 @@ struct DashboardView: View {
     
     func launchApp(_ app: AppItem) {
         let task = Process()
-        task.launchPath = "/usr/bin/open"
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         task.arguments = ["-a", app.path, "--args"] + app.customArgs.split(separator: " ").map(String.init).filter { $0 != "--args" }
-        task.launch()
-    }
-}
-    
-    func loadApps() -> [AppItem] {
-        (try? JSONDecoder().decode([AppItem].self, from: savedAppsData)) ?? []
-    }
-    
-    func launchApp(_ app: AppItem) {
-        let task = Process()
-        task.launchPath = "/usr/bin/open"
-        task.arguments = ["-a", app.path, "--args"] + app.customArgs.split(separator: " ").map(String.init).filter { $0 != "--args" }
-        task.launch()
+        do {
+            try task.run()
+        } catch {
+            print("Failed to launch app: \(error)")
+        }
     }
 }
 

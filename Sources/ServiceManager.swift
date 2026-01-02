@@ -47,7 +47,7 @@ class ServiceManager: ObservableObject {
     
     func checkStatus() {
         let process = Process()
-        process.launchPath = "/usr/bin/pgrep"
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
         process.arguments = ["-x", "ciadpi"]
         
         let pipe = Pipe()
@@ -61,7 +61,12 @@ class ServiceManager: ObservableObject {
                 let running = (process.terminationStatus == 0)
                 if running != self.isRunning {
                     self.isRunning = running
-                    if running { self.startTimer() } else { self.stopTimer() }
+                    if running {
+                        self.startTimer()
+                    } else {
+                        self.stopTimer()
+                        self.connectionTime = 0
+                    }
                 }
                 self.statusMessage = self.isRunning ? "ByeDPI Aktif" : "ByeDPI Kapalı"
             }
@@ -101,7 +106,6 @@ class ServiceManager: ObservableObject {
     func stopTimer() {
         timer?.invalidate()
         timer = nil
-        connectionTime = 0
     }
     
     func launchDiscord() {
@@ -146,10 +150,14 @@ class ServiceManager: ObservableObject {
     
     private func runCommand(_ launchPath: String, args: [String]) {
         let process = Process()
-        process.launchPath = launchPath
+        process.executableURL = URL(fileURLWithPath: launchPath)
         process.arguments = args
-        process.launch()
-        process.waitUntilExit()
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            print("Command failed: \(error)")
+        }
     }
     
     func enableSystemProxy(port: String) {
@@ -165,7 +173,7 @@ class ServiceManager: ObservableObject {
     func pingDNS(host: String) {
         DispatchQueue.global(qos: .userInitiated).async {
             let process = Process()
-            process.launchPath = "/sbin/ping"
+            process.executableURL = URL(fileURLWithPath: "/sbin/ping")
             process.arguments = ["-c", "1", "-W", "1000", host]
             
             let pipe = Pipe()
