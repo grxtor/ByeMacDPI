@@ -78,6 +78,14 @@ class CiadpiEngine: ProxyEngine {
             
             try fm.moveItem(at: tempURL, to: URL(fileURLWithPath: binaryPath))
             try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binaryPath)
+            
+            // Force chmod just in case
+            let chmod = Process()
+            chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
+            chmod.arguments = ["+x", binaryPath]
+            try? chmod.run()
+            chmod.waitUntilExit()
+            
             print("Downloaded ciadpi to \(binaryPath)")
         } catch {
             print("Download failed: \(error)")

@@ -48,7 +48,16 @@ class ServiceManager: ObservableObject {
     }
     
     func startService() {
-        self.statusMessage = L("onboarding.checking")
+        // Show downloading status if binary is missing
+        if !FileManager.default.fileExists(atPath: binaryPath) {
+             self.statusMessage = "İndiriliyor..." // Or localized
+             // Actually, engine.start() will do the download. 
+             // We can check LocalizationManager for key L("status.downloading")
+             // But for now, let's just set a clear message.
+             self.statusMessage = "indiriliyor..."
+        } else {
+             self.statusMessage = L("onboarding.checking")
+        }
         
         Task {
             // 1. Prepare Arguments
