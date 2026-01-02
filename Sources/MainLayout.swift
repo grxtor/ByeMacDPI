@@ -67,7 +67,7 @@ struct MainLayout: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
-                .navigationTitle("ByeDPI")
+                .navigationTitle("ByeMacDPI")
             } detail: {
                 ZStack(alignment: .top) {
                     Group {
@@ -116,60 +116,14 @@ struct TopBar: View {
     let theme: String
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Window Control Buttons
-            HStack(spacing: 8) {
-                WindowButton(color: Color(red: 1.0, green: 0.38, blue: 0.35), action: {
-                    NSApplication.shared.keyWindow?.close()
-                })
-                WindowButton(color: Color(red: 1.0, green: 0.78, blue: 0.25), action: {
-                    NSApplication.shared.keyWindow?.miniaturize(nil)
-                })
-                WindowButton(color: Color(red: 0.15, green: 0.78, blue: 0.35), action: {
-                    NSApplication.shared.keyWindow?.zoom(nil)
-                })
-            }
-            .padding(.leading, 12)
-            
-            Spacer()
-            
-            // Draggable Area
-            Rectangle()
-                .fill(Color.clear)
-                .frame(maxWidth: .infinity)
-                .frame(height: 40)
-                .contentShape(Rectangle())
-            
-            Spacer()
-        }
-        .frame(height: 40)
+        // Simple spacer for top padding - native window controls are used
+        Rectangle()
+            .fill(Color.clear)
+            .frame(height: 28)
     }
 }
 
-struct WindowButton: View {
-    let color: Color
-    let action: () -> Void
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: action) {
-            Circle()
-                .fill(color)
-                .frame(width: 12, height: 12)
-                .overlay(
-                    Circle()
-                        .stroke(color.opacity(0.5), lineWidth: 0.5)
-                )
-                .scaleEffect(isHovered ? 1.1 : 1.0)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-    }
-}
+
 
 struct ThemeToggleButton: View {
     let icon: String

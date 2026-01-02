@@ -19,7 +19,7 @@ class ServiceManager: ObservableObject {
     // Dynamic paths for ByeDPI
     private var appSupportDir: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("ByeDPI")
+        return appSupport.appendingPathComponent("ByeMacDPI")
     }
     
     private var byedpiPath: String {
@@ -41,7 +41,7 @@ class ServiceManager: ObservableObject {
         if isRunning { startTimer() }
     }
     
-    /// Extract bundled ciadpi binary to Application Support on first run
+    /// Extract bundled ciadpi binary to Application Support on first run, or download if not available
     private func setupByeDPI() {
         let fm = FileManager.default
         
@@ -50,22 +50,79 @@ class ServiceManager: ObservableObject {
             try? fm.createDirectory(at: appSupportDir, withIntermediateDirectories: true)
         }
         
-        // Check if binary needs to be extracted
-        if !fm.fileExists(atPath: byedpiPath) {
-            // Get bundled binary from Resources
-            if let bundledPath = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
-                do {
-                    try fm.copyItem(atPath: bundledPath, toPath: byedpiPath)
-                    // Make executable
-                    try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
-                    print("ByeDPI binary extracted to: \(byedpiPath)")
-                } catch {
-                    print("Failed to extract ByeDPI binary: \(error)")
-                }
-            } else {
-                print("WARNING: Bundled ciadpi not found in Resources")
+        // Check if binary already exists
+        if fm.fileExists(atPath: byedpiPath) {
+            return
+        }
+        
+        // Try to get bundled binary from Resources first
+        if let bundledPath = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
+            do {
+                try fm.copyItem(atPath: bundledPath, toPath: byedpiPath)
+                try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
+                print("ByeDPI binary extracted from bundle to: \(byedpiPath)")
+                return
+            } catch {
+                print("Failed to extract bundled binary: \(error)")
             }
         }
+        
+        // If bundle extraction failed, download from GitHub
+        print("Downloading ByeDPI binary from GitHub...")
+        DispatchQueue.main.async {
+            self.statusMessage = "ByeMacDPI indiriliyor..."
+        }
+        downloadByeDPI()
+    }
+    
+    /// Download ciadpi binary from GitHub releases
+    private func downloadByeDPI() {
+        // Detect architecture
+        #if arch(arm64)
+        let binaryName = "ciadpi-macos-arm64"
+        #else
+        let binaryName = "ciadpi-macos-x86_64"
+        #endif
+        
+        let downloadURL = "https://github.com/hufrea/byedpi/releases/latest/download/\(binaryName)"
+        
+        guard let url = URL(string: downloadURL) else {
+            print("Invalid download URL")
+            return
+        }
+        
+        let task = URLSession.shared.downloadTask(with: url) { [self] tempURL, response, error in
+            guard let tempURL = tempURL, error == nil else {
+                print("Download failed: \(error?.localizedDescription ?? "Unknown error")")
+                DispatchQueue.main.async {
+                    self.statusMessage = "İndirme başarısız!"
+                }
+                return
+            }
+            
+            do {
+                let fm = FileManager.default
+                // Remove existing file if any
+                if fm.fileExists(atPath: byedpiPath) {
+                    try fm.removeItem(atPath: byedpiPath)
+                }
+                // Move downloaded file
+                try fm.moveItem(at: tempURL, to: URL(fileURLWithPath: byedpiPath))
+                // Make executable
+                try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
+                
+                print("ByeDPI binary downloaded and installed to: \(byedpiPath)")
+                DispatchQueue.main.async {
+                    self.statusMessage = "ByeMacDPI kuruldu!"
+                }
+            } catch {
+                print("Failed to install downloaded binary: \(error)")
+                DispatchQueue.main.async {
+                    self.statusMessage = "Kurulum başarısız!"
+                }
+            }
+        }
+        task.resume()
     }
     
     func checkAutoStartStatus() {
@@ -109,7 +166,7 @@ class ServiceManager: ObservableObject {
                         self.connectionTime = 0
                     }
                 }
-                self.statusMessage = self.isRunning ? "ByeDPI Aktif" : "ByeDPI Kapalı"
+                self.statusMessage = self.isRunning ? "ByeMacDPI Aktif" : "ByeMacDPI Kapalı"
             }
         } catch {
             print("Status check error: \(error)")
@@ -161,6 +218,11 @@ class ServiceManager: ObservableObject {
     }
     
     private func createPlist() {
+        // Read user settings from UserDefaults
+        let defaults = UserDefaults.standard
+        let splitMode = defaults.string(forKey: "splitMode") ?? "1+s"
+        let port = defaults.string(forKey: "byedpiPort") ?? "1080"
+        
         let content = """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -171,8 +233,10 @@ class ServiceManager: ObservableObject {
             <key>ProgramArguments</key>
             <array>
                 <string>\(byedpiPath)</string>
+                <string>-p</string>
+                <string>\(port)</string>
                 <string>-r</string>
-                <string>1+s</string>
+                <string>\(splitMode)</string>
             </array>
             <key>RunAtLoad</key>
             <true/>

@@ -160,7 +160,7 @@ struct InstalledApp: Identifiable {
     let path: String
 }
 
-// MARK: - App Card with Delete Button
+// MARK: - App Card with Hover Actions
 struct AppCard: View {
     let name: String
     let path: String
@@ -175,56 +175,80 @@ struct AppCard: View {
     @State private var showDeleteConfirm = false
     
     var body: some View {
-        VStack(spacing: 12) {
-            ZStack(alignment: .topTrailing) {
+        Button(action: onLaunch) {
+            VStack(spacing: 12) {
                 // App Icon
                 AppIconView(path: path, fallbackIcon: "app.fill")
                     .frame(width: 56, height: 56)
                 
-                // Delete button on hover
-                if isHovered {
-                    Button(action: { showDeleteConfirm = true }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(.red)
-                            .background(Circle().fill(Color.white).frame(width: 16, height: 16))
+                Text(name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
+            }
+            .frame(width: 140, height: 130)
+            .background(cardBg)
+            .cornerRadius(12)
+            .overlay(
+                // Hover overlay with transparent glass effect
+                Group {
+                    if isHovered {
+                        ZStack {
+                            // Semi-transparent blur background
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black.opacity(0.7))
+                                .background(.ultraThinMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            
+                            // Action buttons with glow
+                            HStack(spacing: 20) {
+                                // Launch button
+                                Button(action: onLaunch) {
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "play.circle.fill")
+                                            .font(.system(size: 28))
+                                            .shadow(color: .green.opacity(0.6), radius: 8)
+                                        Text("Başlat")
+                                            .font(.system(size: 9, weight: .semibold))
+                                    }
+                                    .foregroundColor(.green)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                // Edit button
+                                Button(action: onEdit) {
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "pencil.circle.fill")
+                                            .font(.system(size: 28))
+                                            .shadow(color: .blue.opacity(0.6), radius: 8)
+                                        Text("Düzenle")
+                                            .font(.system(size: 9, weight: .semibold))
+                                    }
+                                    .foregroundColor(.blue)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                // Delete button
+                                Button(action: { showDeleteConfirm = true }) {
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "trash.circle.fill")
+                                            .font(.system(size: 28))
+                                            .shadow(color: .red.opacity(0.6), radius: 8)
+                                        Text("Sil")
+                                            .font(.system(size: 9, weight: .semibold))
+                                    }
+                                    .foregroundColor(.red)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .transition(.opacity)
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .offset(x: 8, y: -8)
                 }
-            }
-            
-            Text(name)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(textColor)
-                .lineLimit(1)
-            
-            HStack(spacing: 8) {
-                Button(action: onLaunch) {
-                    Text("Başlat")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.green)
-                        .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 11))
-                        .foregroundColor(.white)
-                        .frame(width: 26, height: 26)
-                        .background(Color.blue)
-                        .cornerRadius(6)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
+                .animation(.easeOut(duration: 0.2), value: isHovered)
+            )
         }
-        .frame(width: 140, height: 150)
-        .background(cardBg)
-        .cornerRadius(12)
+        .buttonStyle(PlainButtonStyle())
         .onHover { hovering in
             isHovered = hovering
         }
@@ -267,7 +291,7 @@ struct AddAppSheet: View {
                     .foregroundColor(.blue)
             }
             .padding()
-            .background(cardBg)
+            .background(.thinMaterial)
             
             Divider()
             
@@ -280,7 +304,7 @@ struct AddAppSheet: View {
                     .foregroundColor(textColor)
             }
             .padding(10)
-            .background(cardBg)
+            .background(.regularMaterial)
             .cornerRadius(8)
             .padding()
             
@@ -315,7 +339,7 @@ struct AddAppSheet: View {
                 .padding(.horizontal)
             }
             .frame(height: 300)
-            .background(bgColor)
+            .background(.ultraThinMaterial)
             
             Divider()
             
@@ -346,10 +370,11 @@ struct AddAppSheet: View {
                 .disabled(selectedApp == nil)
             }
             .padding()
-            .background(cardBg)
+            .background(.ultraThinMaterial)
         }
         .frame(width: 400, height: 520)
-        .background(bgColor)
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
     }
 }
 

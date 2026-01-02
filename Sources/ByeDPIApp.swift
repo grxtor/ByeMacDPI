@@ -14,9 +14,9 @@ struct ByeDPIApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         
-        MenuBarExtra("ByeDPI", systemImage: service.isRunning ? "bolt.fill" : "bolt.slash.fill") {
+        MenuBarExtra("ByeMacDPI", systemImage: service.isRunning ? "bolt.fill" : "bolt.slash.fill") {
             VStack {
-                Text("ByeDPI Native")
+                Text("ByeMacDPI")
                     .font(.headline)
                 Divider()
                 Button(service.isRunning ? "Durdur" : "Başlat") {

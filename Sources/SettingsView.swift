@@ -51,7 +51,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text("Giriş Sırasında Başlat")
                                     .foregroundColor(textColor)
-                                Text("macOS açıldığında ByeDPI servisini başlat")
+                                Text("macOS açıldığında ByeMacDPI servisini başlat")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -92,19 +92,40 @@ struct SettingsView: View {
                         Text("Hakkında").font(.headline).foregroundColor(textColor)
                     }
                     
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("ByeDPI Manager")
-                                .font(.headline)
-                                .foregroundColor(textColor)
-                            Text("Versiyon 3.5")
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("ByeMacDPI")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(textColor)
+                                Text("Versiyon 2.0")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.green)
+                                .font(.title2)
+                        }
+                        
+                        Divider()
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("macOS için DPI Bypass aracı")
+                                .font(.subheadline)
+                                .foregroundColor(textColor.opacity(0.8))
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: "link")
+                                    .foregroundColor(.blue)
+                                Link("github.com/grxtor/ByeMacDPI", destination: URL(string: "https://github.com/grxtor/ByeMacDPI")!)
+                                    .font(.caption)
+                            }
+                            
+                            Text("MIT Lisansı ile açık kaynak")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
-                        Spacer()
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.green)
-                            .font(.title2)
                     }
                     .padding(20)
                     .background(cardBg)
