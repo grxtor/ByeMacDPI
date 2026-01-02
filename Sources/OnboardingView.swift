@@ -5,7 +5,8 @@ struct OnboardingView: View {
     @Binding var isComplete: Bool
     @State private var currentStep = 0
     @State private var progress: Double = 0
-    @State private var statusText = "Başlatılıyor..."
+    @State private var statusText = L("onboarding.checking")
+    @ObservedObject var loc = LocalizationManager.shared
     @State private var dnsResults: [(String, String, Int)] = [] // (name, ip, latency)
     @State private var bestDNS = ""
     @State private var isTestingDNS = false
@@ -27,7 +28,7 @@ struct OnboardingView: View {
                 Image(systemName: "sparkles")
                     .font(.title)
                     .foregroundColor(.blue)
-                Text("BayMacDPI Kurulum Sihirbazı")
+                Text(L("onboarding.welcome"))
                     .font(.title2.bold())
             }
             .padding(.top, 30)
@@ -46,13 +47,13 @@ struct OnboardingView: View {
             
             // Steps
             VStack(alignment: .leading, spacing: 12) {
-                SetupStep(number: 1, title: "ByeDPI Binary", 
+                SetupStep(number: 1, title: L("onboarding.step1"), 
                          status: currentStep > 0 ? .done : (currentStep == 0 ? .active : .pending))
-                SetupStep(number: 2, title: "DNS Sunucuları Test", 
+                SetupStep(number: 2, title: L("onboarding.step2"), 
                          status: currentStep > 1 ? .done : (currentStep == 1 ? .active : .pending))
-                SetupStep(number: 3, title: "DPI Bypass Test", 
+                SetupStep(number: 3, title: L("onboarding.step3"), 
                          status: currentStep > 2 ? .done : (currentStep == 2 ? .active : .pending))
-                SetupStep(number: 4, title: "Optimal Ayarlar", 
+                SetupStep(number: 4, title: L("onboarding.ready"), 
                          status: currentStep > 3 ? .done : (currentStep == 3 ? .active : .pending))
             }
             .padding(.horizontal, 40)
@@ -86,7 +87,7 @@ struct OnboardingView: View {
             
             // Action Button
             if currentStep >= 4 {
-                Button("Başla") {
+                Button(L("onboarding.finish")) {
                     isComplete = true
                 }
                 .buttonStyle(.borderedProminent)
@@ -103,13 +104,13 @@ struct OnboardingView: View {
     
     func startSetup() {
         // Step 1: Check/Install ByeDPI
-        statusText = "ByeDPI binary kontrol ediliyor..."
+        statusText = L("onboarding.checking")
         progress = 0.1
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             currentStep = 1
             progress = 0.25
-            statusText = "DNS sunucuları test ediliyor..."
+            statusText = L("onboarding.step2") + "..."
             testDNS()
         }
     }
@@ -135,7 +136,7 @@ struct OnboardingView: View {
             isTestingDNS = false
             currentStep = 2
             progress = 0.5
-            statusText = "DPI bypass test ediliyor..."
+            statusText = L("onboarding.step3") + "..."
             testDPI()
         }
     }
@@ -146,12 +147,12 @@ struct OnboardingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             currentStep = 3
             progress = 0.75
-            statusText = "Optimal ayarlar belirleniyor..."
+            statusText = L("onboarding.checking")
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 currentStep = 4
                 progress = 1.0
-                statusText = "Kurulum tamamlandı!"
+                statusText = L("onboarding.ready")
                 isTestingDPI = false
             }
         }

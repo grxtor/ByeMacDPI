@@ -14,11 +14,13 @@ struct DashboardView: View {
     var cardBg: Color { appTheme == "light" ? Color(white: 0.90) : Color(white: 0.11) }
     var bgColor: Color { appTheme == "light" ? Color(white: 0.95) : Color(white: 0.08) }
     
+    @ObservedObject var loc = LocalizationManager.shared
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
                 // Header
-                Text("Dashboard")
+                Text(L("dashboard.title"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(textColor)
                 
@@ -49,7 +51,7 @@ struct DashboardView: View {
                                 Circle()
                                     .fill(service.isRunning ? Color.green : Color.red)
                                     .frame(width: 8, height: 8)
-                                Text(service.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı")
+                                Text(service.isRunning ? L("dashboard.active") : L("dashboard.inactive"))
                                     .font(.title3)
                                     .bold()
                                     .foregroundColor(textColor)
@@ -60,7 +62,7 @@ struct DashboardView: View {
                                     .font(.system(size: 13, design: .monospaced))
                                     .foregroundColor(.blue)
                             } else {
-                                Text("Servisi başlatmak için butona tıklayın")
+                                Text(L("dashboard.start_hint"))
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -85,7 +87,7 @@ struct DashboardView: View {
                     
                     // Config Row
                     HStack(spacing: 0) {
-                        ConfigItem(label: "Protokol", textColor: textColor) {
+                        ConfigItem(label: L("dashboard.config.protocol"), textColor: textColor) {
                             Picker("", selection: $proxyType) {
                                 Text("SOCKS5").tag("socks5")
                                 Text("HTTP").tag("http")
@@ -97,7 +99,7 @@ struct DashboardView: View {
                         
                         Divider().frame(height: 40)
                         
-                        ConfigItem(label: "Port", textColor: textColor) {
+                        ConfigItem(label: L("dashboard.config.port"), textColor: textColor) {
                             TextField("", text: $byedpiPort)
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .frame(width: 50)
@@ -107,7 +109,7 @@ struct DashboardView: View {
                         
                         Divider().frame(height: 40)
                         
-                        ConfigItem(label: "Split", textColor: textColor) {
+                        ConfigItem(label: L("dashboard.config.split"), textColor: textColor) {
                             Picker("", selection: $splitMode) {
                                 Text("1+s").tag("1+s")
                                 Text("2+s").tag("2+s")
@@ -119,7 +121,7 @@ struct DashboardView: View {
                         
                         Divider().frame(height: 40)
                         
-                        ConfigItem(label: "Sistem Proxy", textColor: textColor) {
+                        ConfigItem(label: L("dashboard.config.system_proxy"), textColor: textColor) {
                             Toggle("", isOn: $systemProxyEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .green))
                                 .labelsHidden()
@@ -138,21 +140,21 @@ struct DashboardView: View {
                 
                 // Presets
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Profiller")
+                    Text(L("dashboard.presets"))
                         .font(.headline)
                         .foregroundColor(.gray)
                     
                     HStack(spacing: 10) {
-                        CompactPreset(name: "Standart", icon: "shield", isActive: activePreset == "standard", textColor: textColor) {
+                        CompactPreset(name: L("preset.standard"), icon: "shield", isActive: activePreset == "standard", textColor: textColor) {
                             activePreset = "standard"; proxyType = "socks5"; splitMode = "1+s"
                         }
-                        CompactPreset(name: "Oyun", icon: "gamecontroller", isActive: activePreset == "gaming", textColor: textColor) {
+                        CompactPreset(name: L("preset.game"), icon: "gamecontroller", isActive: activePreset == "gaming", textColor: textColor) {
                             activePreset = "gaming"; proxyType = "socks5"; splitMode = "fake"
                         }
-                        CompactPreset(name: "Streaming", icon: "play.tv", isActive: activePreset == "streaming", textColor: textColor) {
+                        CompactPreset(name: L("preset.streaming"), icon: "play.tv", isActive: activePreset == "streaming", textColor: textColor) {
                             activePreset = "streaming"; proxyType = "http"; splitMode = "2+s"
                         }
-                        CompactPreset(name: "Gizlilik", icon: "eye.slash", isActive: activePreset == "privacy", textColor: textColor) {
+                        CompactPreset(name: L("preset.privacy"), icon: "eye.slash", isActive: activePreset == "privacy", textColor: textColor) {
                             activePreset = "privacy"; proxyType = "https"; splitMode = "1+s"
                         }
                     }
@@ -160,17 +162,13 @@ struct DashboardView: View {
                 
                 // Quick Launch
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Uygulamalar")
+                    Text(L("dashboard.apps"))
                         .font(.headline)
                         .foregroundColor(.gray)
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            AppGridItem(name: "Discord", path: "/Applications/Discord.app", fallbackIcon: "message.fill", color: .indigo) {
-                                service.launchDiscord()
-                            }
-                            
-                            ForEach(loadApps().prefix(5)) { app in
+                            ForEach(loadApps().prefix(6)) { app in
                                 AppGridItem(name: app.name, path: app.path, fallbackIcon: "app.fill", color: .blue) {
                                     launchApp(app)
                                 }

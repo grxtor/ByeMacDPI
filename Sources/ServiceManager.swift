@@ -1,308 +1,199 @@
 import Foundation
 import Combine
 import AppKit
+import SwiftUI
 
 class ServiceManager: ObservableObject {
     @Published var isRunning: Bool = false
-    @Published var statusMessage: String = "Sistem Hazır"
-    @Published var pingResults: [String: String] = [:] 
-    @Published var autoStartEnabled: Bool = false
+    @Published var statusMessage: String = L("dashboard.inactive")
     @Published var connectionTime: Int = 0
+    @Published var binaryPath: String = ""
+    @Published var pingResults: [String: String] = [:]
     
-    private var timer: Timer?
-    private let plistName = "com.baymacdpi.service.plist"
+    // Engine - Default to Ciadpi
+    private var engine: ProxyEngine = CiadpiEngine()
     
-    private var plistPath: String {
-        let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        let agentsDir = libraryPath.appendingPathComponent("LaunchAgents")
-        if !FileManager.default.fileExists(atPath: agentsDir.path) {
-            try? FileManager.default.createDirectory(at: agentsDir, withIntermediateDirectories: true)
-        }
-        return agentsDir.appendingPathComponent(plistName).path
-    }
+    // Timer
+    private var timer: AnyCancellable?
     
-    // Dynamic paths for ByeDPI
-    private var appSupportDir: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("BayMacDPI")
-    }
-    
-    private var byedpiPath: String {
-        // Return custom path if set and valid, otherwise fallback to default
-        if let customPath = UserDefaults.standard.string(forKey: "customBinaryPath"), !customPath.isEmpty {
-            return customPath
-        }
-        return appSupportDir.appendingPathComponent("ciadpi").path
-    }
-    
-    private var logPath: String {
-        return appSupportDir.appendingPathComponent("byedpi.log").path
-    }
-    
-    private var errorLogPath: String {
-        return appSupportDir.appendingPathComponent("byedpi_error.log").path
-    }
-    
-    var binaryPath: String { byedpiPath }
+    // User Settings
+    @AppStorage("autoStartEnabled") var autoStartEnabled: Bool = false // Launches App at Login (Logical placeholder)
+    @AppStorage("systemProxyEnabled") var systemProxyEnabled: Bool = false
+    @AppStorage("didAddDefaultApps") var didAddDefaultApps: Bool = false
     
     init() {
-        setupByeDPI()
+        self.binaryPath = engine.binaryPath
+        
+        // Initial Check
         checkStatus()
-        checkAutoStartStatus()
-        if isRunning { startTimer() }
-    }
-    
-    /// Extract bundled ciadpi binary to Application Support on first run, or download if not available
-    private func setupByeDPI() {
-        let fm = FileManager.default
         
-        // Create Application Support/ByeDPI directory
-        if !fm.fileExists(atPath: appSupportDir.path) {
-            try? fm.createDirectory(at: appSupportDir, withIntermediateDirectories: true)
-        }
-        
-        // Check if binary already exists
-        if fm.fileExists(atPath: byedpiPath) {
-            return
-        }
-        
-        // Try to get bundled binary from Resources first
-        if let bundledPath = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
-            do {
-                try fm.copyItem(atPath: bundledPath, toPath: byedpiPath)
-                try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
-                print("ByeDPI binary extracted from bundle to: \(byedpiPath)")
-                return
-            } catch {
-                print("Failed to extract bundled binary: \(error)")
-            }
-        }
-        
-        // If bundle extraction failed, download from GitHub
-        print("Downloading ByeDPI binary from GitHub...")
-        DispatchQueue.main.async {
-            self.statusMessage = "BayMacDPI indiriliyor..."
-        }
-        downloadByeDPI()
-    }
-    
-    /// Download ciadpi binary from GitHub releases
-    private func downloadByeDPI() {
-        // Detect architecture
-        #if arch(arm64)
-        let binaryName = "ciadpi-macos-arm64"
-        #else
-        let binaryName = "ciadpi-macos-x86_64"
-        #endif
-        
-        let downloadURL = "https://github.com/hufrea/byedpi/releases/latest/download/\(binaryName)"
-        
-        guard let url = URL(string: downloadURL) else {
-            print("Invalid download URL")
-            return
-        }
-        
-        let task = URLSession.shared.downloadTask(with: url) { [self] tempURL, response, error in
-            guard let tempURL = tempURL, error == nil else {
-                print("Download failed: \(error?.localizedDescription ?? "Unknown error")")
-                DispatchQueue.main.async {
-                    self.statusMessage = "İndirme başarısız!"
+        // Auto Connect Logic (if app was restarted)
+        // Note: Real "Start at Login" requires SMAppService or helper app. 
+        // For now, we assume if the app is open, we might want to autostart the proxy.
+        if UserDefaults.standard.bool(forKey: "autoConnect") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                if !self.isRunning {
+                    self.startService()
                 }
-                return
-            }
-            
-            do {
-                let fm = FileManager.default
-                // Remove existing file if any
-                if fm.fileExists(atPath: byedpiPath) {
-                    try fm.removeItem(atPath: byedpiPath)
-                }
-                // Move downloaded file
-                try fm.moveItem(at: tempURL, to: URL(fileURLWithPath: byedpiPath))
-                // Make executable
-                try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
-                
-                print("ByeDPI binary downloaded and installed to: \(byedpiPath)")
-                DispatchQueue.main.async {
-                    self.statusMessage = "BayMacDPI kuruldu!"
-                }
-            } catch {
-                print("Failed to install downloaded binary: \(error)")
-                DispatchQueue.main.async {
-                    self.statusMessage = "Kurulum başarısız!"
-                }
-            }
-        }
-        task.resume()
-    }
-    
-    func checkAutoStartStatus() {
-        autoStartEnabled = FileManager.default.fileExists(atPath: plistPath)
-    }
-    
-    func toggleAutoStart() {
-        if autoStartEnabled { disableAutoStart() } else { enableAutoStart() }
-    }
-    
-    func enableAutoStart() {
-        createPlist()
-        autoStartEnabled = true
-    }
-    
-    func disableAutoStart() {
-        try? FileManager.default.removeItem(atPath: plistPath)
-        autoStartEnabled = false
-    }
-    
-    func checkStatus() {
-        DispatchQueue.global(qos: .background).async {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-            process.arguments = ["-x", "ciadpi"]
-            
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            
-            do {
-                try process.run()
-                process.waitUntilExit()
-                
-                let isRunningNow = (process.terminationStatus == 0)
-                
-                DispatchQueue.main.async {
-                    if isRunningNow != self.isRunning {
-                        self.isRunning = isRunningNow
-                        if isRunningNow {
-                            self.startTimer()
-                        } else {
-                            self.stopTimer()
-                            self.connectionTime = 0
-                        }
-                    }
-                    self.statusMessage = self.isRunning ? "BayMacDPI Aktif" : "BayMacDPI Kapalı"
-                }
-            } catch {
-                print("Status check error: \(error)")
             }
         }
     }
     
     func toggleService() {
-        if isRunning { stopService() } else { startService() }
+        if isRunning {
+            stopService()
+        } else {
+            startService()
+        }
     }
     
     func startService() {
-        createPlist()
-        // Run in background to avoid UI lag
+        self.statusMessage = L("onboarding.checking")
+        
         Task {
-            runCommand("/bin/launchctl", args: ["bootstrap", "gui/\(getuid())", plistPath])
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { 
-                self.checkStatus()
+            // 1. Prepare Arguments
+            let defaults = UserDefaults.standard
+            let port = defaults.string(forKey: "byedpiPort") ?? "1080"
+            let splitMode = defaults.string(forKey: "splitMode") ?? "1+s"
+            
+            var args = [
+                "-i", "127.0.0.1",
+                "-p", port
+            ]
+            
+            // Mode Logic
+            if splitMode == "1+s" { args.append(contentsOf: ["-s", "1"]) }
+            else if splitMode == "fake" { args.append(contentsOf: ["-f", "1"]) }
+            else if splitMode == "2+s" { args.append(contentsOf: ["-s", "1", "--disorder", "2"]) } // Example mapping
+            else { args.append(contentsOf: ["-s", "1"]) }
+            
+            // Custom Args
+            if let custom = defaults.string(forKey: "byedpiArgs"), !custom.isEmpty {
+                 let customSplit = custom.split(separator: " ").map(String.init)
+                 args.append(contentsOf: customSplit)
+            }
+            
+            // 2. Start Engine
+            do {
+                try await engine.start(args: args)
+                
+                // 3. Update UI & System
+                await MainActor.run {
+                    self.isRunning = true
+                    self.statusMessage = L("dashboard.active")
+                    self.startTimer()
+                    
+                    if self.systemProxyEnabled {
+                        self.enableSystemProxy(port: port)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isRunning = false
+                    self.statusMessage = "\(L("common.error")): \(error.localizedDescription)"
+                }
             }
         }
     }
     
     func stopService() {
-        // Run in background to avoid UI lag
         Task {
-            runCommand("/bin/launchctl", args: ["bootout", "gui/\(getuid())", plistPath])
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { 
-                self.checkStatus()
+            await engine.stop()
+            
+            await MainActor.run {
+                self.isRunning = false
+                self.statusMessage = L("dashboard.inactive")
+                self.stopTimer()
+                self.disableSystemProxy()
             }
         }
     }
     
-    func startTimer() {
-        stopTimer()
-        DispatchQueue.main.async {
-            self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                self.connectionTime += 1
+    func checkStatus() {
+        Task {
+            let running = await engine.checkStatus()
+            await MainActor.run {
+                // Only update if changed to avoid UI flickering
+                if self.isRunning != running {
+                    self.isRunning = running
+                    self.statusMessage = running ? L("dashboard.active") : L("dashboard.inactive")
+                }
+                
+                self.binaryPath = engine.binaryPath
+                
+                if running && self.timer == nil {
+                    self.startTimer()
+                } else if !running {
+                    self.stopTimer()
+                }
             }
         }
     }
     
-    func stopTimer() {
-        timer?.invalidate()
+    // MARK: - Timer
+    private func startTimer() {
+        stopTimer() // ensure no duplicates
+        self.connectionTime = 0
+        timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect().sink { _ in
+            self.connectionTime += 1
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.cancel()
         timer = nil
+        connectionTime = 0
     }
     
-    func launchDiscord() {
-        // Launch Discord with proxy args
-        let args = [
-            "-a", "/Applications/Discord.app",
-            "--args",
-            "--proxy-server=socks5://127.0.0.1:1080",
-            "--ignore-certificate-errors"
-        ]
-        runCommand("/usr/bin/open", args: args)
+    // MARK: - System Proxy
+    func enableSystemProxy(port: String) {
+        let service = "Wi-Fi"
+        runBackgroundCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxy", service, "127.0.0.1", port])
+        runBackgroundCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", service, "on"])
     }
     
-    func revealInFinder() {
-        let url = URL(fileURLWithPath: byedpiPath).deletingLastPathComponent()
-        NSWorkspace.shared.selectFile(byedpiPath, inFileViewerRootedAtPath: url.path)
+    func disableSystemProxy() {
+        let service = "Wi-Fi"
+        runBackgroundCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", service, "off"])
     }
     
-    private func createPlist() {
-        // Read user settings from UserDefaults
-        let defaults = UserDefaults.standard
-        let splitMode = defaults.string(forKey: "splitMode") ?? "1+s"
-        let port = defaults.string(forKey: "byedpiPort") ?? "1080"
-        
-        let content = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>Label</key>
-            <string>com.baymacdpi.service</string>
-            <key>ProgramArguments</key>
-            <array>
-                <string>\(byedpiPath)</string>
-                <string>-p</string>
-                <string>\(port)</string>
-                <string>-r</string>
-                <string>\(splitMode)</string>
-            </array>
-            <key>RunAtLoad</key>
-            <true/>
-            <key>KeepAlive</key>
-            <true/>
-            <key>StandardOutPath</key>
-            <string>\(logPath)</string>
-            <key>StandardErrorPath</key>
-            <string>\(errorLogPath)</string>
-        </dict>
-        </plist>
-        """
-        let pathURL = URL(fileURLWithPath: plistPath)
-        try? content.write(to: pathURL, atomically: true, encoding: .utf8)
-    }
-    
-    private func runCommand(_ launchPath: String, args: [String]) {
-        // Run on background queue to keep UI responsive
+    private func runBackgroundCommand(_ launchPath: String, args: [String]) {
         DispatchQueue.global(qos: .userInitiated).async {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: launchPath)
             process.arguments = args
-            do {
-                try process.run()
-                process.waitUntilExit()
-            } catch {
-                print("Command failed: \(error)")
-            }
+            try? process.run()
+            process.waitUntilExit()
         }
     }
     
-    func enableSystemProxy(port: String) {
-        let service = "Wi-Fi"
-        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxy", service, "127.0.0.1", port])
-        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", service, "on"])
+    // MARK: - App Management
+    func launchDiscord() {
+         let ws = NSWorkspace.shared
+         if let url = ws.urlForApplication(withBundleIdentifier: "com.hnc.Discord") {
+             let config = NSWorkspace.OpenConfiguration()
+             ws.openApplication(at: url, configuration: config)
+         } else {
+             // Try standard path
+             let task = Process()
+             task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+             task.arguments = ["-a", "/Applications/Discord.app"]
+             try? task.run()
+         }
     }
     
-    func disableSystemProxy() {
-        runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", "Wi-Fi", "off"])
+    func revealInFinder() {
+        let url = URL(fileURLWithPath: binaryPath)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     
+    func toggleAutoStart() {
+        autoStartEnabled.toggle()
+        // Implementation for Login Item would go here.
+        // For now boolean is stored for UI state.
+    }
+    
+    // MARK: - DNS Tools
     func pingDNS(host: String) {
         DispatchQueue.global(qos: .userInitiated).async {
             let process = Process()

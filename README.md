@@ -6,9 +6,9 @@
 
 **macOS için DPI Bypass Aracı** | **DPI Bypass Tool for macOS**
 
-[![macOS](https://img.shields.io/badge/macOS-15.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![macOS](https://img.shields.io/badge/macOS-13.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9-FA7343?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-GPLv3-blue?style=for-the-badge)](LICENSE)
 
 [English](#english) | [Türkçe](#türkçe)
 
@@ -30,7 +30,9 @@ BayMacDPI is a native macOS application that helps bypass Deep Packet Inspection
 | 📱 **App Launcher** | Launch apps (Discord, etc.) through the proxy |
 | ⚙️ **Custom Profiles** | Standard, Gaming, Streaming, Privacy presets |
 | 🌐 **DNS Tools** | Test DNS servers with latency checks |
-| 🎨 **Modern UI** | Native SwiftUI with glass effects |
+| � **Localization** | Support for English and Turkish (System Auto) |
+| 🏗️ **Multi-Engine** | Architecture ready for multiple bypass engines |
+| 📂 **Custom Binary** | Use your own DPI bypass binary/path |
 | 🔄 **Auto-Install** | Binary auto-downloads on first run |
 
 ### Screenshots
@@ -59,7 +61,7 @@ open "Build/BayMacDPI.app"
 ```
 
 ### Requirements
-- macOS 15.0 (Sequoia) or later
+- macOS 13.0 (Ventura) or later
 - Apple Silicon (M1/M2/M3) or Intel Mac
 
 ---
@@ -78,7 +80,9 @@ BayMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımc�
 | 📱 **Uygulama Başlatıcı** | Uygulamaları (Discord, vb.) proxy üzerinden başlat |
 | ⚙️ **Özel Profiller** | Standart, Oyun, Streaming, Gizlilik profilleri |
 | 🌐 **DNS Araçları** | DNS sunucularını gecikme testleriyle kontrol et |
-| 🎨 **Modern Arayüz** | Glass efektli native SwiftUI tasarım |
+| � **Yerelleştirme** | Türkçe ve İngilizce dil desteği (Otomatik) |
+| 🏗️ **Çoklu Motor** | Farklı bypass motorları için hazır altyapı |
+| 📂 **Özel Dosya** | Kendi DPI binary dosyanı seçebilme |
 | 🔄 **Otomatik Kurulum** | İlk çalıştırmada binary otomatik indirilir |
 
 ### Kurulum
@@ -115,12 +119,6 @@ open "Build/BayMacDPI.app"
 
 ## License / Lisans
 
-MIT License - See [LICENSE](LICENSE) for details.
+GPL v3 License - See [LICENSE](LICENSE) for details.
 
 ---
-
-<div align="center">
-
-**Made with ❤️ for a free internet**
-
-</div>

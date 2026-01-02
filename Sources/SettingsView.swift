@@ -9,28 +9,53 @@ struct SettingsView: View {
     var cardBg: Color { appTheme == "light" ? Color(white: 0.90) : Color(white: 0.12) }
     var bgColor: Color { appTheme == "light" ? Color(white: 0.95) : Color(white: 0.08) }
     
+    @ObservedObject var loc = LocalizationManager.shared
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
-                Text("Ayarlar")
+                Text(L("settings.title"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(textColor)
+                
+                // Language
+                VStack(alignment: .leading, spacing: 15) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "globe").foregroundColor(.blue)
+                        Text(L("settings.language")).font(.headline).foregroundColor(textColor)
+                    }
+                    
+                    HStack(spacing: 12) {
+                        ThemeCard(title: L("settings.language.system"), icon: "gear", isSelected: loc.appLanguage == "system", textColor: textColor) {
+                            loc.setLanguage("system")
+                        }
+                        ThemeCard(title: L("settings.language.tr"), icon: "character.book.closed", isSelected: loc.appLanguage == "tr", textColor: textColor) {
+                            loc.setLanguage("tr")
+                        }
+                        ThemeCard(title: L("settings.language.en"), icon: "character.book.closed.fill", isSelected: loc.appLanguage == "en", textColor: textColor) {
+                            loc.setLanguage("en")
+                        }
+                    }
+                    .padding(20)
+                    .background(cardBg)
+                    .cornerRadius(12)
+                }
                 
                 // Theme
                 VStack(alignment: .leading, spacing: 15) {
                     HStack(spacing: 8) {
                         Image(systemName: "paintbrush.fill").foregroundColor(.blue)
-                        Text("Tema").font(.headline).foregroundColor(textColor)
+                        Text(L("settings.theme")).font(.headline).foregroundColor(textColor)
                     }
                     
                     HStack(spacing: 12) {
-                        ThemeCard(title: "Karanlık", icon: "moon.fill", isSelected: appTheme == "dark", textColor: textColor) {
+                        ThemeCard(title: L("settings.theme.dark"), icon: "moon.fill", isSelected: appTheme == "dark", textColor: textColor) {
                             appTheme = "dark"
                         }
-                        ThemeCard(title: "Aydınlık", icon: "sun.max.fill", isSelected: appTheme == "light", textColor: textColor) {
+                        ThemeCard(title: L("settings.theme.light"), icon: "sun.max.fill", isSelected: appTheme == "light", textColor: textColor) {
                             appTheme = "light"
                         }
-                        ThemeCard(title: "Şeffaf", icon: "sparkles", isSelected: appTheme == "transparent", textColor: textColor) {
+                        ThemeCard(title: L("settings.theme.transparent"), icon: "sparkles", isSelected: appTheme == "transparent", textColor: textColor) {
                             appTheme = "transparent"
                         }
                     }
@@ -43,15 +68,15 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 15) {
                     HStack(spacing: 8) {
                         Image(systemName: "power").foregroundColor(.blue)
-                        Text("Başlangıç").font(.headline).foregroundColor(textColor)
+                        Text(L("settings.startup")).font(.headline).foregroundColor(textColor)
                     }
                     
                     VStack(spacing: 15) {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text("Giriş Sırasında Başlat")
+                                Text(L("settings.startup.login"))
                                     .foregroundColor(textColor)
-                                Text("macOS açıldığında BayMacDPI servisini başlat")
+                                Text(L("settings.startup.login_desc"))
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -68,9 +93,9 @@ struct SettingsView: View {
                         
                         HStack {
                             VStack(alignment: .leading) {
-                                Text("Otomatik Bağlan")
+                                Text(L("settings.startup.auto_connect"))
                                     .foregroundColor(textColor)
-                                Text("Uygulama açıldığında servisi başlat")
+                                Text(L("settings.startup.auto_connect_desc"))
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -89,12 +114,12 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 15) {
                     HStack(spacing: 8) {
                         Image(systemName: "gearshape.2.fill").foregroundColor(.blue)
-                        Text("Kişiselleştirme").font(.headline).foregroundColor(textColor)
+                        Text(L("settings.customization")).font(.headline).foregroundColor(textColor)
                     }
                     
                     VStack(spacing: 15) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("DPI Binary Yolu")
+                            Text(L("settings.customization.binary_path"))
                                 .foregroundColor(textColor)
                             Text(service.binaryPath)
                                 .font(.system(.caption, design: .monospaced))
@@ -122,7 +147,7 @@ struct SettingsView: View {
                                     }
                                 }
                             }) {
-                                Text("Değiştir")
+                                Text(L("settings.customization.change"))
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 32)
                                     .background(Color.blue.opacity(0.15))
@@ -134,7 +159,7 @@ struct SettingsView: View {
                             Button(action: {
                                 service.revealInFinder()
                             }) {
-                                Text("Klasörü Aç")
+                                Text(L("settings.customization.open_folder"))
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 32)
                                     .background(Color.gray.opacity(0.15))
@@ -153,7 +178,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 15) {
                     HStack(spacing: 8) {
                         Image(systemName: "info.circle.fill").foregroundColor(.blue)
-                        Text("Hakkında").font(.headline).foregroundColor(textColor)
+                        Text(L("settings.about")).font(.headline).foregroundColor(textColor)
                     }
                     
                     VStack(spacing: 12) {
@@ -162,7 +187,7 @@ struct SettingsView: View {
                                 Text("BayMacDPI")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(textColor)
-                                Text("Versiyon 2.0")
+                                Text("\(L("settings.about.version")) 2.2")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
@@ -175,7 +200,7 @@ struct SettingsView: View {
                         Divider()
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("macOS için DPI Bypass aracı")
+                            Text(L("settings.about.desc"))
                                 .font(.subheadline)
                                 .foregroundColor(textColor.opacity(0.8))
                             
@@ -186,10 +211,11 @@ struct SettingsView: View {
                                     .font(.caption)
                             }
                             
-                            Text("MIT Lisansı ile açık kaynak")
+                            Text(L("settings.about.license"))
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         
                         Divider()
                         
@@ -198,7 +224,7 @@ struct SettingsView: View {
                         }) {
                             HStack {
                                 Image(systemName: "arrow.counterclockwise.circle.fill")
-                                Text("Kurulumu Tekrarla")
+                                Text(L("settings.about.reset"))
                             }
                             .font(.subheadline.bold())
                             .foregroundColor(.white)

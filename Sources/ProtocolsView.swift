@@ -17,15 +17,17 @@ struct ProtocolsView: View {
     var cardBg: Color { appTheme == "light" ? Color(white: 0.90) : Color(white: 0.12) }
     var bgColor: Color { appTheme == "light" ? Color(white: 0.95) : Color(white: 0.08) }
     
+    @ObservedObject var loc = LocalizationManager.shared
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
-                Text("Protokol Ayarları")
+                Text(L("protocols.title"))
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(textColor)
                 
                 // Proxy Type
-                SettingCard(title: "Proxy Türü", icon: "network", cardBg: cardBg, textColor: textColor) {
+                SettingCard(title: L("protocols.proxy_type"), icon: "network", cardBg: cardBg, textColor: textColor) {
                     HStack(spacing: 12) {
                         ForEach(["socks5", "http", "https"], id: \.self) { type in
                             Button(action: { proxyType = type }) {
@@ -43,27 +45,27 @@ struct ProtocolsView: View {
                 }
                 
                 // Connection
-                SettingCard(title: "Bağlantı", icon: "server.rack", cardBg: cardBg, textColor: textColor) {
+                SettingCard(title: L("protocols.connection"), icon: "server.rack", cardBg: cardBg, textColor: textColor) {
                     VStack(spacing: 15) {
-                        SettingRow(label: "Port", textColor: textColor) {
+                        SettingRow(label: L("dashboard.config.port"), textColor: textColor) {
                             TextField("1080", text: $byedpiPort)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
                         }
                         Divider()
-                        SettingRow(label: "Zaman Aşımı (sn)", textColor: textColor) {
+                        SettingRow(label: L("protocols.timeout"), textColor: textColor) {
                             TextField("30", text: $connectionTimeout)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
                         }
                         Divider()
-                        SettingRow(label: "Maks. Bağlantı", textColor: textColor) {
+                        SettingRow(label: L("protocols.max_conn"), textColor: textColor) {
                             TextField("100", text: $maxConnections)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
                         }
                         Divider()
-                        SettingRow(label: "Sistem Proxy", textColor: textColor) {
+                        SettingRow(label: L("dashboard.config.system_proxy"), textColor: textColor) {
                             Toggle("", isOn: $systemProxyEnabled)
                                 .toggleStyle(SwitchToggleStyle(tint: .blue))
                                 .labelsHidden()
@@ -76,9 +78,9 @@ struct ProtocolsView: View {
                 }
                 
                 // DPI Bypass
-                SettingCard(title: "DPI Bypass", icon: "shield.lefthalf.filled", cardBg: cardBg, textColor: textColor) {
+                SettingCard(title: L("protocols.dpi_bypass"), icon: "shield.lefthalf.filled", cardBg: cardBg, textColor: textColor) {
                     VStack(alignment: .leading, spacing: 15) {
-                        Text("Split Modu")
+                        Text(L("protocols.split_mode"))
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         HStack(spacing: 10) {
@@ -98,7 +100,7 @@ struct ProtocolsView: View {
                         
                         Divider()
                         
-                        SettingRow(label: "TTL Değeri", textColor: textColor) {
+                        SettingRow(label: L("protocols.ttl"), textColor: textColor) {
                             TextField("4", text: $ttlValue)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 60)
@@ -107,7 +109,7 @@ struct ProtocolsView: View {
                         Divider()
                         
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Özel Argümanlar")
+                            Text(L("protocols.custom_args"))
                                 .foregroundColor(textColor)
                             TextField("-r 1+s", text: $byedpiArgs)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -116,9 +118,9 @@ struct ProtocolsView: View {
                 }
                 
                 // DNS
-                SettingCard(title: "DNS over HTTPS", icon: "globe", cardBg: cardBg, textColor: textColor) {
+                SettingCard(title: L("protocols.dns"), icon: "globe", cardBg: cardBg, textColor: textColor) {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        DNSBtn(name: "Kapalı", ip: "Sistem", provider: "none", selected: $dohProvider, textColor: textColor)
+                        DNSBtn(name: "Kapalı", ip: L("settings.language.system"), provider: "none", selected: $dohProvider, textColor: textColor)
                         DNSBtn(name: "Cloudflare", ip: "1.1.1.1", provider: "cloudflare", selected: $dohProvider, textColor: textColor)
                         DNSBtn(name: "Google", ip: "8.8.8.8", provider: "google", selected: $dohProvider, textColor: textColor)
                         DNSBtn(name: "Quad9", ip: "9.9.9.9", provider: "quad9", selected: $dohProvider, textColor: textColor)

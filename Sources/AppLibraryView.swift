@@ -10,6 +10,7 @@ struct AppLibraryView: View {
     @State private var editingApp: AppItem? = nil
     @State private var installedApps: [InstalledApp] = []
     @AppStorage("didAddDefaultApps") var didAddDefaultApps: Bool = false
+    @ObservedObject var loc = LocalizationManager.shared
     
     var textColor: Color { appTheme == "light" ? .black : .white }
     var cardBg: Color { appTheme == "light" ? Color(white: 0.92) : Color(white: 0.12) }
@@ -23,10 +24,10 @@ struct AppLibraryView: View {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Uygulama Kütüphanesi")
+                        Text(L("library.title"))
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(textColor)
-                        Text("Proxy üzerinden çalıştırılacak uygulamalar")
+                        Text(L("library.subtitle"))
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
@@ -39,7 +40,7 @@ struct AppLibraryView: View {
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "plus")
-                            Text("Uygulama Ekle")
+                            Text(L("library.add"))
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
@@ -172,6 +173,7 @@ struct AppCard: View {
     
     @State private var isHovered = false
     @State private var showDeleteConfirm = false
+    @ObservedObject var loc = LocalizationManager.shared
     
     var body: some View {
         Button(action: onLaunch) {
@@ -200,7 +202,7 @@ struct AppCard: View {
                         // Action Buttons in Glass Pills
                         VStack(spacing: 12) {
                             Button(action: onEdit) {
-                                Text("Düzenle")
+                                Text(L("library.edit"))
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(width: 95, height: 32)
@@ -211,7 +213,7 @@ struct AppCard: View {
                             .buttonStyle(PlainButtonStyle())
                             
                             Button(action: { showDeleteConfirm = true }) {
-                                Text("Sil")
+                                Text(L("library.delete"))
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(width: 95, height: 32)
@@ -237,11 +239,11 @@ struct AppCard: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .alert("Uygulamayı Sil", isPresented: $showDeleteConfirm) {
-            Button("İptal", role: .cancel) {}
-            Button("Sil", role: .destructive) { onDelete() }
+        .alert(L("library.delete_confirm_title"), isPresented: $showDeleteConfirm) {
+            Button(L("library.cancel"), role: .cancel) {}
+            Button(L("library.delete"), role: .destructive) { onDelete() }
         } message: {
-            Text("\(name) uygulamasını listeden kaldırmak istediğinize emin misiniz?")
+            Text(L("library.delete_confirm_msg"))
         }
     }
 }
