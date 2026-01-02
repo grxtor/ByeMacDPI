@@ -16,15 +16,56 @@ class ServiceManager: ObservableObject {
         return libraryPath.appendingPathComponent("LaunchAgents/\(plistName)").path
     }
     
-    private let byedpiDetails = (
-        path: "/Users/abdullah/.byedpi/ciadpi",
-        args: ["-r", "1+s"]
-    )
+    // Dynamic paths for ByeDPI
+    private var appSupportDir: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("ByeDPI")
+    }
+    
+    private var byedpiPath: String {
+        return appSupportDir.appendingPathComponent("ciadpi").path
+    }
+    
+    private var logPath: String {
+        return appSupportDir.appendingPathComponent("byedpi.log").path
+    }
+    
+    private var errorLogPath: String {
+        return appSupportDir.appendingPathComponent("byedpi_error.log").path
+    }
     
     init() {
+        setupByeDPI()
         checkStatus()
         checkAutoStartStatus()
         if isRunning { startTimer() }
+    }
+    
+    /// Extract bundled ciadpi binary to Application Support on first run
+    private func setupByeDPI() {
+        let fm = FileManager.default
+        
+        // Create Application Support/ByeDPI directory
+        if !fm.fileExists(atPath: appSupportDir.path) {
+            try? fm.createDirectory(at: appSupportDir, withIntermediateDirectories: true)
+        }
+        
+        // Check if binary needs to be extracted
+        if !fm.fileExists(atPath: byedpiPath) {
+            // Get bundled binary from Resources
+            if let bundledPath = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
+                do {
+                    try fm.copyItem(atPath: bundledPath, toPath: byedpiPath)
+                    // Make executable
+                    try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: byedpiPath)
+                    print("ByeDPI binary extracted to: \(byedpiPath)")
+                } catch {
+                    print("Failed to extract ByeDPI binary: \(error)")
+                }
+            } else {
+                print("WARNING: Bundled ciadpi not found in Resources")
+            }
+        }
     }
     
     func checkAutoStartStatus() {

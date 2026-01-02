@@ -50,4 +50,15 @@ EOF
 # PkgInfo
 echo "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
+# Copy ByeDPI binary
+BYEDPI_SRC="$HOME/.byedpi/ciadpi"
+if [ -f "$BYEDPI_SRC" ]; then
+    echo "Copying ByeDPI binary..."
+    cp "$BYEDPI_SRC" "$RESOURCES_DIR/ciadpi"
+    chmod +x "$RESOURCES_DIR/ciadpi"
+else
+    echo "WARNING: ByeDPI binary not found at $BYEDPI_SRC"
+    echo "Please ensure ciadpi is available in ~/.byedpi/"
+fi
+
 echo "Build Successful: $APP_BUNDLE"
