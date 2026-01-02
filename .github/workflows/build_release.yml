@@ -1,0 +1,48 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: macos-15  # Using macOS 15 runner if available, or latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment
+        run: |
+          # Create strict directory structure expected by build script
+          mkdir -p ~/.byedpi
+          
+          # Download valid ciadpi binary for bundling (Universal or x86 fallback)
+          # Using a known stable release to bundle
+          curl -L -o ~/.byedpi/ciadpi "https://github.com/hufrea/byedpi/releases/download/v0.13/ciadpi-x86_64"
+          chmod +x ~/.byedpi/ciadpi
+          
+      - name: Build Application
+        run: |
+          chmod +x build_app.sh
+          # Run the build script
+          ./build_app.sh
+
+      - name: Create DMG
+        run: |
+          chmod +x create_dmg.sh
+          ./create_dmg.sh
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Build/ByeMacDPI.dmg
+          generate_release_notes: true
+          draft: false
+          prerelease: false

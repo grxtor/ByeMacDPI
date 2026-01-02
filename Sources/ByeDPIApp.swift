@@ -2,14 +2,40 @@ import SwiftUI
 import AppKit
 
 @main
-struct ByeDPIApp: App {
+struct ByeMacDPIApp: App {
     @StateObject private var service = ServiceManager()
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var showOnboarding = false
     
     var body: some Scene {
         WindowGroup {
-            MainLayout()
-                .environmentObject(service) // Optional, but good practice
-                .frame(minWidth: 900, minHeight: 650)
+            ZStack {
+                MainLayout()
+                    .environmentObject(service)
+                    .frame(minWidth: 900, minHeight: 650)
+                
+                // Show onboarding overlay on first run
+                if showOnboarding {
+                    Color.black.opacity(0.8)
+                        .ignoresSafeArea()
+                    
+                    OnboardingView(service: service, isComplete: $hasCompletedOnboarding)
+                        .cornerRadius(16)
+                        .shadow(radius: 20)
+                }
+            }
+            .onAppear {
+                if !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
+            }
+            .onChange(of: hasCompletedOnboarding) { _, newValue in
+                if newValue {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showOnboarding = false
+                    }
+                }
+            }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)

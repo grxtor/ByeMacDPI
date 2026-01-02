@@ -196,48 +196,46 @@ struct AppCard: View {
                         ZStack {
                             // Semi-transparent blur background
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.black.opacity(0.7))
-                                .background(.ultraThinMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .fill(Color.black.opacity(0.85))
                             
-                            // Action buttons with glow
-                            HStack(spacing: 20) {
+                            // Action buttons
+                            HStack(spacing: 12) {
                                 // Launch button
                                 Button(action: onLaunch) {
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "play.circle.fill")
-                                            .font(.system(size: 28))
-                                            .shadow(color: .green.opacity(0.6), radius: 8)
-                                        Text("Başlat")
-                                            .font(.system(size: 9, weight: .semibold))
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "play.fill")
+                                            .font(.system(size: 22))
+                                        Text("Aç")
+                                            .font(.system(size: 8, weight: .medium))
                                     }
                                     .foregroundColor(.green)
+                                    .frame(width: 36)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 // Edit button
                                 Button(action: onEdit) {
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "pencil.circle.fill")
-                                            .font(.system(size: 28))
-                                            .shadow(color: .blue.opacity(0.6), radius: 8)
-                                        Text("Düzenle")
-                                            .font(.system(size: 9, weight: .semibold))
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 22))
+                                        Text("Düzen")
+                                            .font(.system(size: 8, weight: .medium))
                                     }
                                     .foregroundColor(.blue)
+                                    .frame(width: 36)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
                                 // Delete button
                                 Button(action: { showDeleteConfirm = true }) {
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "trash.circle.fill")
-                                            .font(.system(size: 28))
-                                            .shadow(color: .red.opacity(0.6), radius: 8)
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 22))
                                         Text("Sil")
-                                            .font(.system(size: 9, weight: .semibold))
+                                            .font(.system(size: 8, weight: .medium))
                                     }
                                     .foregroundColor(.red)
+                                    .frame(width: 36)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -245,7 +243,7 @@ struct AppCard: View {
                         .transition(.opacity)
                     }
                 }
-                .animation(.easeOut(duration: 0.2), value: isHovered)
+                .animation(.easeOut(duration: 0.15), value: isHovered)
             )
         }
         .buttonStyle(PlainButtonStyle())
