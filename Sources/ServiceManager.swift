@@ -170,7 +170,7 @@ class ServiceManager: ObservableObject {
             <string>com.user.byedpi</string>
             <key>ProgramArguments</key>
             <array>
-                <string>\(byedpiDetails.path)</string>
+                <string>\(byedpiPath)</string>
                 <string>-r</string>
                 <string>1+s</string>
             </array>
@@ -179,9 +179,9 @@ class ServiceManager: ObservableObject {
             <key>KeepAlive</key>
             <true/>
             <key>StandardOutPath</key>
-            <string>/Users/abdullah/.byedpi/byedpi.log</string>
+            <string>\(logPath)</string>
             <key>StandardErrorPath</key>
-            <string>/Users/abdullah/.byedpi/byedpi_error.log</string>
+            <string>\(errorLogPath)</string>
         </dict>
         </plist>
         """
