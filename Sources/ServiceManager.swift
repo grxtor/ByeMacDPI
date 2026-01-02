@@ -180,6 +180,7 @@ class ServiceManager: ObservableObject {
             <string>com.baymacdpi.ciadpi</string>
             <key>ProgramArguments</key>
             <array>
+<<<<<<< HEAD
                 <string>\(byedpiPath)</string>
                 <string>-i</string>
                 <string>127.0.0.1</string>
@@ -187,15 +188,24 @@ class ServiceManager: ObservableObject {
                 <string>\(port)</string>
                 <string>-s</string>
                 <string>1</string>
+=======
+                <string>\(byedpiDetails.path)</string>
+                <string>-r</string>
+                <string>1+s</string>
+>>>>>>> parent of f1948f8 (refactor: use variables for byedpi and log paths in launchd plist configuration)
             </array>
             <key>RunAtLoad</key>
             <true/>
             <key>KeepAlive</key>
             <true/>
             <key>StandardOutPath</key>
-            <string>\(logPath)</string>
+            <string>/Users/abdullah/.byedpi/byedpi.log</string>
             <key>StandardErrorPath</key>
+<<<<<<< HEAD
             <string>\(logPath)</string>
+=======
+            <string>/Users/abdullah/.byedpi/byedpi_error.log</string>
+>>>>>>> parent of f1948f8 (refactor: use variables for byedpi and log paths in launchd plist configuration)
         </dict>
         </plist>
         """
