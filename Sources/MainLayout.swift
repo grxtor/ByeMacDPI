@@ -116,7 +116,21 @@ struct TopBar: View {
     let theme: String
     
     var body: some View {
-        HStack {
+        HStack(spacing: 0) {
+            // Window Control Buttons
+            HStack(spacing: 8) {
+                WindowButton(color: Color(red: 1.0, green: 0.38, blue: 0.35), action: {
+                    NSApplication.shared.keyWindow?.close()
+                })
+                WindowButton(color: Color(red: 1.0, green: 0.78, blue: 0.25), action: {
+                    NSApplication.shared.keyWindow?.miniaturize(nil)
+                })
+                WindowButton(color: Color(red: 0.15, green: 0.78, blue: 0.35), action: {
+                    NSApplication.shared.keyWindow?.zoom(nil)
+                })
+            }
+            .padding(.leading, 12)
+            
             Spacer()
             
             // Draggable Area
@@ -125,20 +139,35 @@ struct TopBar: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
                 .contentShape(Rectangle())
-                .gesture(
-                    DragGesture()
-                )
             
             Spacer()
         }
         .frame(height: 40)
-        .overlay(
-            HStack {
-                Spacer()
-                // Window Controls could go here if we were doing a completely custom title bar
-                // But for now, let's just make it a draggable buffer
+    }
+}
+
+struct WindowButton: View {
+    let color: Color
+    let action: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(color)
+                .frame(width: 12, height: 12)
+                .overlay(
+                    Circle()
+                        .stroke(color.opacity(0.5), lineWidth: 0.5)
+                )
+                .scaleEffect(isHovered ? 1.1 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
             }
-        )
+        }
     }
 }
 
