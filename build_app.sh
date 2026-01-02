@@ -59,8 +59,11 @@ if [ -f "$BYEDPI_SRC" ]; then
     cp "$BYEDPI_SRC" "$RESOURCES_DIR/ciadpi"
     chmod +x "$RESOURCES_DIR/ciadpi"
 else
-    echo "WARNING: ByeDPI binary not found at $BYEDPI_SRC"
     echo "Please ensure ciadpi is available in ~/.byedpi/"
 fi
+
+# Ad-hoc Code Signing to prevent "Damaged" error
+echo "Signing app (ad-hoc)..."
+codesign --force --deep --sign - "$APP_BUNDLE"
 
 echo "Build Successful: $APP_BUNDLE"
