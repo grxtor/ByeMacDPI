@@ -14,6 +14,8 @@ protocol ProxyEngine {
 class CiadpiEngine: ProxyEngine {
     var name: String = "Ciadpi"
     
+    private var process: Process?
+    
     var binaryPath: String {
         if let customPath = UserDefaults.standard.string(forKey: "customBinaryPath") {
             return customPath
@@ -22,65 +24,113 @@ class CiadpiEngine: ProxyEngine {
         return appSupport.appendingPathComponent("BayMacDPI/ciadpi").path
     }
     
+    var logPath: String {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("BayMacDPI/byedpi.log").path
+    }
+    
     var isRunning: Bool = false
     
     init() {
-        setupByeDPI()
+        Task { await ensureBinaryExists() }
     }
     
-    private func setupByeDPI() {
+    private func ensureBinaryExists() async {
         let fm = FileManager.default
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let bayBayDir = appSupport.appendingPathComponent("BayMacDPI")
-        let targetPath = bayBayDir.appendingPathComponent("ciadpi").path
+        let path = binaryPath
         
-        // Ensure directory exists
-        if !fm.fileExists(atPath: bayBayDir.path) {
-            try? fm.createDirectory(at: bayBayDir, withIntermediateDirectories: true)
+        if fm.fileExists(atPath: path) { return }
+        
+        // 1. Try Bundle
+        if let bundled = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
+            try? fm.copyItem(atPath: bundled, toPath: path)
+            try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: path)
+            return
         }
         
-        // Check if exists
-        if fm.fileExists(atPath: targetPath) { return }
+        // 2. Download Fallback
+        await downloadBinary()
+    }
+    
+    private func downloadBinary() async {
+        print("Downloading ciadpi...")
+        // Detect architecture
+        #if arch(arm64)
+        let binaryName = "ciadpi-macos-arm64"
+        #else
+        let binaryName = "ciadpi-macos-x86_64"
+        #endif
         
-        // Extract from bundle
-        if let bundled = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
-            try? fm.copyItem(atPath: bundled, toPath: targetPath)
-            try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: targetPath)
-        } else {
-            // Download fallback (simplified for engine)
-            print("Ciadpi binary not found in bundle!")
+        guard let url = URL(string: "https://github.com/hufrea/byedpi/releases/latest/download/\(binaryName)") else { return }
+        
+        do {
+            let (tempURL, _) = try await URLSession.shared.download(from: url)
+            let fm = FileManager.default
+            let folder = URL(fileURLWithPath: binaryPath).deletingLastPathComponent()
+            
+            if !fm.fileExists(atPath: folder.path) {
+                try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            }
+            
+            if fm.fileExists(atPath: binaryPath) {
+                try fm.removeItem(atPath: binaryPath)
+            }
+            
+            try fm.moveItem(at: tempURL, to: URL(fileURLWithPath: binaryPath))
+            try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binaryPath)
+            print("Downloaded ciadpi to \(binaryPath)")
+        } catch {
+            print("Download failed: \(error)")
         }
     }
     
     func start(args: [String]) async throws {
-        // Construct command
-        // ciadpi needs full command line or we construct it here?
-        // ServiceManager constructs it currently.
-        // We will move construction here or pass arguments.
-        // For simplicity, we pass the raw arguments list.
-        
+        // Ensure binary exists before starting
+        if !FileManager.default.fileExists(atPath: binaryPath) {
+             await downloadBinary()
+             if !FileManager.default.fileExists(atPath: binaryPath) {
+                 throw NSError(domain: "Ciadpi", code: 404, userInfo: [NSLocalizedDescriptionKey: "Binary not found and download failed."])
+             }
+        }
+    
         let task = Process()
         task.executableURL = URL(fileURLWithPath: binaryPath)
         task.arguments = args
         
-        // Output handling
-        task.standardOutput = FileHandle.nullDevice // or pipe if we want logs
-        task.standardError = FileHandle.nullDevice
+        // Logging
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: logPath) {
+             fm.createFile(atPath: logPath, contents: nil)
+        }
+        let fileHandle = try? FileHandle(forWritingTo: URL(fileURLWithPath: logPath))
+        fileHandle?.seekToEndOfFile()
+        
+        task.standardOutput = fileHandle
+        task.standardError = fileHandle
         
         try task.run()
-        // We don't wait for exit, it's a daemon/service
+        self.process = task
+        self.isRunning = true
     }
     
     func stop() async {
+        process?.terminate()
+        process = nil
+        
+        // Fallback cleanup
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
         task.arguments = ["-f", "ciadpi"]
-        try? task.run() // we don't await compilation of pkill usually
+        try? task.run() 
         task.waitUntilExit()
+        
+        self.isRunning = false
     }
     
     func checkStatus() async -> Bool {
-        // Use pgrep to check if running
+        if process != nil && process!.isRunning { return true }
+        
+        // Fallback pgrep check (in case it was started externally or process var lost)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
         task.arguments = ["-f", "ciadpi"]
