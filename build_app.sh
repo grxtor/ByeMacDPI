@@ -13,7 +13,7 @@ mkdir -p "$RESOURCES_DIR"
 
 # Compile
 echo "Compiling Swift Sources..."
-swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/ByeDPIManager" -target arm64-apple-macosx13.0 -swift-version 5
+swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/ByeDPIManager" -target arm64-apple-macosx15.0 -swift-version 5
 
 if [ $? -ne 0 ]; then
     echo "Compilation FAILED"
@@ -39,6 +39,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>15.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>
