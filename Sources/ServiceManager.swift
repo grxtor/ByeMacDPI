@@ -229,7 +229,10 @@ class ServiceManager: ObservableObject {
     func startStatusSync() {
         // Periodic check to ensure UI matches reality
         statusSyncTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.checkStatus()
+            guard let self = self else { return }
+            if !self.isProcessing {
+                self.checkStatus()
+            }
         }
     }
     
@@ -289,10 +292,10 @@ class ServiceManager: ObservableObject {
     func restartService() {
         print("[ByeMacDPI] 🔄 Restarting Service...")
         if isRunning {
-            stopService()
-            // Wait for stop and port release
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.startService()
+            stopService {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.startService()
+                }
             }
         } else {
             startService()
@@ -429,7 +432,7 @@ class ServiceManager: ObservableObject {
         }
     }
     
-    func stopService() {
+    func stopService(completion: (() -> Void)? = nil) {
         isProcessing = true
         statusMessage = L("dashboard.stopping")
         
@@ -470,6 +473,7 @@ class ServiceManager: ObservableObject {
                 print("[ByeMacDPI] 🌐 Disabling System Proxy...")
                 self.disableSystemProxy()
                 self.waitForStatus(target: false)
+                completion?()
             }
         }
     }
