@@ -68,6 +68,7 @@ struct MainLayout: View {
                     .padding(.vertical, 12)
                 }
                 .navigationTitle("ByeMacDPI")
+                .navigationSplitViewColumnWidth(min: 240, ideal: 260, max: 350)
             } detail: {
                 ZStack(alignment: .top) {
                     Group {
