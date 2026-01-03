@@ -67,7 +67,7 @@ struct MainLayout: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                 }
-                .navigationTitle("BayMacDPI")
+                .navigationTitle("ByeMacDPI")
             } detail: {
                 ZStack(alignment: .top) {
                     Group {

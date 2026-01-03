@@ -1,5 +1,5 @@
 #!/bin/bash
-APP_NAME="BayMacDPI"
+APP_NAME="ByeMacDPI"
 SRC_DIR="Sources"
 BUILD_DIR="Build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
@@ -13,7 +13,7 @@ mkdir -p "$RESOURCES_DIR"
 
 # Compile for Apple Silicon (ARM64) Only
 echo "Compiling Swift Sources (ARM64)..."
-swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/BayMacDPI" -target arm64-apple-macosx13.0 -swift-version 5
+swiftc "$SRC_DIR"/*.swift -o "$MACOS_DIR/ByeMacDPI" -target arm64-apple-macosx13.0 -swift-version 5
 
 if [ $? -ne 0 ]; then
     echo "Compilation FAILED"
@@ -36,11 +36,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>BayMacDPI</string>
+    <string>ByeMacDPI</string>
     <key>CFBundleIdentifier</key>
-    <string>com.baymacdpi.app</string>
+    <string>com.byemacdpi.app</string>
     <key>CFBundleName</key>
-    <string>BayMacDPI</string>
+    <string>ByeMacDPI</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleShortVersionString</key>
@@ -52,7 +52,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2024 BayMacDPI. Licensed under MIT.</string>
+    <string>Copyright © 2024 ByeMacDPI. Licensed under MIT.</string>
 </dict>
 </plist>
 EOF

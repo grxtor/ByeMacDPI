@@ -184,7 +184,7 @@ struct SettingsView: View {
                     VStack(spacing: 12) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("BayMacDPI")
+                                Text("ByeMacDPI")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(textColor)
                                 Text("\(L("settings.about.version")) \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.0")")
@@ -207,7 +207,7 @@ struct SettingsView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "link")
                                     .foregroundColor(.blue)
-                                Link("github.com/grxtor/BayMacDPI", destination: URL(string: "https://github.com/grxtor/BayMacDPI")!)
+                                Link("github.com/grxtor/ByeMacDPI", destination: URL(string: "https://github.com/grxtor/ByeMacDPI")!)
                                     .font(.caption)
                             }
                             

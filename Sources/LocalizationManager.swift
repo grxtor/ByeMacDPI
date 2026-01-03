@@ -49,8 +49,8 @@ func L(_ key: String) -> String {
 private let TurkishStrings: [String: String] = [
     // Dashboard
     "dashboard.title": "Panel",
-    "dashboard.active": "BayMacDPI Aktif",
-    "dashboard.inactive": "BayMacDPI Kapalı",
+    "dashboard.active": "ByeMacDPI Aktif",
+    "dashboard.inactive": "ByeMacDPI Kapalı",
     "dashboard.starting": "Başlatılıyor...",
     "dashboard.stopping": "Durduruluyor...",
     "dashboard.start_hint": "Servisi başlatmak için butona tıklayın",
@@ -99,7 +99,7 @@ private let TurkishStrings: [String: String] = [
     "settings.theme.transparent": "Şeffaf",
     "settings.startup": "Başlangıç",
     "settings.startup.login": "Giriş Sırasında Başlat",
-    "settings.startup.login_desc": "macOS açıldığında BayMacDPI servisini başlat",
+    "settings.startup.login_desc": "macOS açıldığında ByeMacDPI servisini başlat",
     "settings.startup.auto_connect": "Otomatik Bağlan",
     "settings.startup.auto_connect_desc": "Uygulama açıldığında servisi başlat",
     "settings.customization": "Kişiselleştirme",
@@ -171,8 +171,8 @@ private let TurkishStrings: [String: String] = [
 private let EnglishStrings: [String: String] = [
     // Dashboard
     "dashboard.title": "Dashboard",
-    "dashboard.active": "BayMacDPI Active",
-    "dashboard.inactive": "BayMacDPI Inactive",
+    "dashboard.active": "ByeMacDPI Active",
+    "dashboard.inactive": "ByeMacDPI Inactive",
     "dashboard.starting": "Starting...",
     "dashboard.stopping": "Stopping...",
     "dashboard.start_hint": "Click button to start service",
@@ -221,7 +221,7 @@ private let EnglishStrings: [String: String] = [
     "settings.theme.transparent": "Transparent",
     "settings.startup": "Startup",
     "settings.startup.login": "Launch at Login",
-    "settings.startup.login_desc": "Start BayMacDPI when macOS starts",
+    "settings.startup.login_desc": "Start ByeMacDPI when macOS starts",
     "settings.startup.auto_connect": "Auto Connect",
     "settings.startup.auto_connect_desc": "Start service when app opens",
     "settings.customization": "Customization",

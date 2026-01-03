@@ -1,4 +1,4 @@
-# BayMacDPI v3.0.9 Release Notes
+# ByeMacDPI v3.0.9 Release Notes
 
 **Stable Release: Gatekeeper & Connectivity Fixes**
 

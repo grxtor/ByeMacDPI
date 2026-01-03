@@ -178,7 +178,7 @@ struct DashboardView: View {
                                 withAnimation(.spring(response: 0.3)) {
                                     activePreset = preset.id
                                     proxyType = preset.proxyType
-                                    print("[BayMacDPI] 🔄 Preset Changed: \(preset.id)")
+                                    print("[ByeMacDPI] 🔄 Preset Changed: \(preset.id)")
                                     
                                     if service.isRunning {
                                         service.restartService()
@@ -209,6 +209,16 @@ struct DashboardView: View {
             .padding(30)
         }
         .background(bgColor)
+        .alert(isPresented: Binding<Bool>(
+            get: { service.errorMessage != nil },
+            set: { _ in service.errorMessage = nil }
+        )) {
+            Alert(
+                title: Text("Hata"),
+                message: Text(service.errorMessage ?? ""),
+                dismissButton: .default(Text("Tamam"))
+            )
+        }
     }
     
     func formatTime(_ seconds: Int) -> String {

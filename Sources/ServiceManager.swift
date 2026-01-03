@@ -157,7 +157,7 @@ class ServiceManager: ObservableObject {
     
     private var timer: Timer?
     private var statusSyncTimer: Timer?
-    private let plistName = "com.baymacdpi.ciadpi.plist"
+    private let plistName = "com.byemacdpi.ciadpi.plist"
     
     private var plistPath: String {
         let libraryPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
@@ -172,7 +172,7 @@ class ServiceManager: ObservableObject {
         }
         
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appSupportPath = appSupport.appendingPathComponent("BayMacDPI/ciadpi").path
+        let appSupportPath = appSupport.appendingPathComponent("ByeMacDPI/ciadpi").path
         if FileManager.default.fileExists(atPath: appSupportPath) {
             return appSupportPath
         }
@@ -180,7 +180,7 @@ class ServiceManager: ObservableObject {
         // Extract from bundle if needed
         if let bundled = Bundle.main.path(forResource: "ciadpi", ofType: nil) {
             let fm = FileManager.default
-            let folder = appSupport.appendingPathComponent("BayMacDPI")
+            let folder = appSupport.appendingPathComponent("ByeMacDPI")
             try? fm.createDirectory(at: folder, withIntermediateDirectories: true)
             try? fm.copyItem(atPath: bundled, toPath: appSupportPath)
             try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: appSupportPath)
@@ -267,7 +267,7 @@ class ServiceManager: ObservableObject {
     }
     
     func restartService() {
-        print("[BayMacDPI] 🔄 Restarting Service...")
+        print("[ByeMacDPI] 🔄 Restarting Service...")
         if isRunning {
             stopService()
             // Wait for stop and port release
@@ -282,25 +282,37 @@ class ServiceManager: ObservableObject {
     func startService() {
         // Ensure binary exists
         let binary = byedpiPath
-        guard FileManager.default.fileExists(atPath: binary) else {
-            print("[BayMacDPI] Binary not found: \(binary)")
-            return
+        if !FileManager.default.fileExists(atPath: binary) {
+             print("[ByeMacDPI] ❌ Binary not found at \(binary)")
+             DispatchQueue.main.async {
+                 self.errorMessage = "Hata: CiaDPI binary dosyası bulunamadı!\nKonum: \(binary)"
+                 self.statusMessage = "Binary Hatası"
+                 self.isProcessing = false
+             }
+             return
         }
         
-        isProcessing = true
-        statusMessage = L("dashboard.starting")
-        
-        // Force cleanup old processes first (silently)
+        // Ensure executable
+        if !FileManager.default.isExecutableFile(atPath: binary) {
+             print("[ByeMacDPI] ⚠️ Binary not executable, attempting chmod +x")
+             let chmod = Process()
+             chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
+             chmod.arguments = ["+x", binary]
+             try? chmod.run()
+             chmod.waitUntilExit()
+        }
+
+        // Force cleanup of existing process
         let killTask = Process()
         killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         killTask.arguments = ["-9", "ciadpi"]
-        killTask.standardOutput = FileHandle.nullDevice
-        killTask.standardError = FileHandle.nullDevice
         try? killTask.run()
         killTask.waitUntilExit()
         
-        // Small delay after cleanup
-        Thread.sleep(forTimeInterval: 0.5)
+        Thread.sleep(forTimeInterval: 0.5) // Wait for port release
+        
+        isProcessing = true
+        statusMessage = L("dashboard.starting")
         
         // Build arguments from settings
         let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
@@ -316,10 +328,10 @@ class ServiceManager: ObservableObject {
         let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
-        print("[BayMacDPI] ══════════════════════════════════════")
-        print("[BayMacDPI] 🚀 Starting ByeDPI Service")
-        print("[BayMacDPI] ──────────────────────────────────────")
-        print("[BayMacDPI] 📋 Active Preset: \(activePreset)")
+        print("[ByeMacDPI] ══════════════════════════════════════")
+        print("[ByeMacDPI] 🚀 Starting ByeDPI Service")
+        print("[ByeMacDPI] ──────────────────────────────────────")
+        print("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
         
         var args = ["-i", "127.0.0.1", "-p", port]
         
@@ -344,7 +356,7 @@ class ServiceManager: ObservableObject {
         if activePreset == "custom" && !customArgs.isEmpty {
              let customArgsParsed = customArgs.split(separator: " ").map(String.init)
              args += customArgsParsed
-             print("[BayMacDPI] 🔧 Custom Args: \(customArgs)")
+             print("[ByeMacDPI] 🔧 Custom Args: \(customArgs)")
         } else if let preset = PresetManager.preset(for: activePreset) {
             args += preset.args
             
@@ -357,15 +369,15 @@ class ServiceManager: ObservableObject {
                     args[idx + 1] = ttlValue
                 }
             }
-            print("[BayMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
+            print("[ByeMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
         } else {
             args += ["--split", "1+s"]
-            print("[BayMacDPI] ⚠️  Preset not found, using default")
+            print("[ByeMacDPI] ⚠️  Preset not found, using default")
         }
         
-        print("[BayMacDPI] ──────────────────────────────────────")
-        print("[BayMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
-        print("[BayMacDPI] ══════════════════════════════════════")
+        print("[ByeMacDPI] ──────────────────────────────────────")
+        print("[ByeMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
+        print("[ByeMacDPI] ══════════════════════════════════════")
         
         // Start ciadpi directly
         DispatchQueue.global(qos: .userInitiated).async {
@@ -377,18 +389,19 @@ class ServiceManager: ObservableObject {
             
             do {
                 try task.run()
-                print("[BayMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
+                print("[ByeMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
                 
                 DispatchQueue.main.async {
                     self.waitForStatus(target: true)
                     if self.systemProxyEnabled {
-                        print("[BayMacDPI] 🌐 Enabling System Proxy on port \(port)...")
+                        print("[ByeMacDPI] 🌐 Enabling System Proxy on port \(port)...")
                         self.enableSystemProxy(port: port)
                     }
                 }
             } catch {
-                print("[BayMacDPI] ❌ Failed to start: \(error)")
+                print("[ByeMacDPI] ❌ Failed to start: \(error)")
                 DispatchQueue.main.async {
+                    self.errorMessage = "Servis başlatılamadı:\n\(error.localizedDescription)"
                     self.statusMessage = L("common.error")
                     self.isProcessing = false
                 }
@@ -400,7 +413,7 @@ class ServiceManager: ObservableObject {
         isProcessing = true
         statusMessage = L("dashboard.stopping")
         
-        print("[BayMacDPI] 🛑 Stopping ByeDPI Service...")
+        print("[ByeMacDPI] 🛑 Stopping ByeDPI Service...")
         
         DispatchQueue.global(qos: .userInitiated).async {
             // 1. Unload from launchd (in case it was loaded previously)
@@ -431,10 +444,10 @@ class ServiceManager: ObservableObject {
             try? pkillTask.run()
             pkillTask.waitUntilExit()
             
-            print("[BayMacDPI] ✅ ByeDPI Service stopped")
+            print("[ByeMacDPI] ✅ ByeDPI Service stopped")
             
             DispatchQueue.main.async {
-                print("[BayMacDPI] 🌐 Disabling System Proxy...")
+                print("[ByeMacDPI] 🌐 Disabling System Proxy...")
                 self.disableSystemProxy()
                 self.waitForStatus(target: false)
             }
@@ -524,7 +537,7 @@ class ServiceManager: ObservableObject {
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
         let logPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("BayMacDPI/byedpi.log").path
+            .appendingPathComponent("ByeMacDPI/byedpi.log").path
         
         // Start with base arguments
         var args = [byedpiPath, "-i", "127.0.0.1", "-p", port]
@@ -587,7 +600,7 @@ class ServiceManager: ObservableObject {
         <plist version="1.0">
         <dict>
             <key>Label</key>
-            <string>com.baymacdpi.ciadpi</string>
+            <string>com.byemacdpi.ciadpi</string>
             <key>ProgramArguments</key>
             <array>
                 \(argsString)

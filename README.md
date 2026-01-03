@@ -1,8 +1,8 @@
-# BayMacDPI
+# ByeMacDPI
 
 <div align="center">
 
-![BayMacDPI Logo](Screenshots/logo.png)
+![ByeMacDPI Logo](Screenshots/logo.png)
 
 **macOS için DPI Bypass Aracı** | **DPI Bypass Tool for macOS**
 
@@ -18,9 +18,9 @@
 
 ## English
 
-### What is BayMacDPI?
+### What is ByeMacDPI?
 
-BayMacDPI is a native macOS application that helps bypass Deep Packet Inspection (DPI) restrictions. It provides a beautiful, modern interface to manage the [ByeDPI](https://github.com/hufrea/byedpi) proxy service on your Mac.
+ByeMacDPI is a native macOS application that helps bypass Deep Packet Inspection (DPI) restrictions. It provides a beautiful, modern interface to manage the [ByeDPI](https://github.com/hufrea/byedpi) proxy service on your Mac.
 
 ### Features
 
@@ -48,16 +48,16 @@ BayMacDPI is a native macOS application that helps bypass Deep Packet Inspection
 ### Installation
 
 #### Option 1: Download Release
-1. Download `BayMacDPI.dmg` from [Releases](../../releases)
+1. Download `ByeMacDPI.dmg` from [Releases](../../releases)
 2. Open the DMG and drag to Applications
-3. Launch BayMacDPI
+3. Launch ByeMacDPI
 
 #### Option 2: Build from Source
 ```bash
-git clone https://github.com/grxtor/BayMacDPI.git
-cd BayMacDPI
+git clone https://github.com/grxtor/ByeMacDPI.git
+cd ByeMacDPI
 ./build_app.sh
-open "Build/BayMacDPI.app"
+open "Build/ByeMacDPI.app"
 ```
 
 ### Requirements
@@ -68,9 +68,9 @@ open "Build/BayMacDPI.app"
 
 ## Türkçe
 
-### BayMacDPI Nedir?
+### ByeMacDPI Nedir?
 
-BayMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımcı olan native bir macOS uygulamasıdır. Mac'inizde [ByeDPI](https://github.com/hufrea/byedpi) proxy servisini yönetmek için güzel ve modern bir arayüz sunar.
+ByeMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımcı olan native bir macOS uygulamasıdır. Mac'inizde [ByeDPI](https://github.com/hufrea/byedpi) proxy servisini yönetmek için güzel ve modern bir arayüz sunar.
 
 ### Özellikler
 
@@ -88,16 +88,16 @@ BayMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımc�
 ### Kurulum
 
 #### Seçenek 1: Release İndir
-1. [Releases](../../releases) sayfasından `BayMacDPI.dmg` indir
+1. [Releases](../../releases) sayfasından `ByeMacDPI.dmg` indir
 2. DMG'yi aç ve Applications'a sürükle
-3. BayMacDPI'ı başlat
+3. ByeMacDPI'ı başlat
 
 #### Seçenek 2: Kaynak Koddan Derle
 ```bash
-git clone https://github.com/grxtor/BayMacDPI.git
-cd BayMacDPI
+git clone https://github.com/grxtor/ByeMacDPI.git
+cd ByeMacDPI
 ./build_app.sh
-open "Build/BayMacDPI.app"
+open "Build/ByeMacDPI.app"
 ```
 
 ---
@@ -106,12 +106,12 @@ open "Build/BayMacDPI.app"
 
 ```
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Your App      │ ──► │  BayMacDPI   │ ──► │  Internet   │
+│   Your App      │ ──► │  ByeMacDPI   │ ──► │  Internet   │
 │ (Discord, etc.) │     │ SOCKS5 Proxy │     │  (No DPI)   │
 └─────────────────┘     └──────────────┘     └─────────────┘
 ```
 
-1. **BayMacDPI** starts a local SOCKS5 proxy (default: `127.0.0.1:1080`)
+1. **ByeMacDPI** starts a local SOCKS5 proxy (default: `127.0.0.1:1080`)
 2. The proxy uses DPI bypass techniques (packet splitting, TTL manipulation)
 3. Apps connect through this proxy to bypass restrictions
 

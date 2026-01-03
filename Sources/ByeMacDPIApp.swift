@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct BayMacDPIApp: App {
+struct ByeMacDPIApp: App {
     @StateObject private var service = ServiceManager()
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
@@ -44,9 +44,9 @@ struct BayMacDPIApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         
-        MenuBarExtra("BayMacDPI", systemImage: service.isRunning ? "bolt.fill" : "bolt.slash.fill") {
+        MenuBarExtra("ByeMacDPI", systemImage: service.isRunning ? "bolt.fill" : "bolt.slash.fill") {
             VStack {
-                Text("BayMacDPI")
+                Text("ByeMacDPI")
                     .font(.headline)
                 Divider()
                 Button(service.isRunning ? "Durdur" : "Başlat") {

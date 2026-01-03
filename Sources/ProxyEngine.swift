@@ -21,12 +21,12 @@ class CiadpiEngine: ProxyEngine {
             return customPath
         }
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("BayMacDPI/ciadpi").path
+        return appSupport.appendingPathComponent("ByeMacDPI/ciadpi").path
     }
     
     var logPath: String {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("BayMacDPI/byedpi.log").path
+        return appSupport.appendingPathComponent("ByeMacDPI/byedpi.log").path
     }
     
     var isRunning: Bool = false
