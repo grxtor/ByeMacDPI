@@ -63,6 +63,11 @@ private let TurkishStrings: [String: String] = [
     "preset.streaming": "Medyalar",
     "preset.privacy": "Gizlilik",
     
+    // Sidebar
+    "sidebar.general": "Genel",
+    "sidebar.config": "Yapılandırma",
+    "sidebar.system": "Sistem",
+    
     // Settings
     "settings.title": "Ayarlar",
     "settings.theme": "Tema",
@@ -127,7 +132,17 @@ private let TurkishStrings: [String: String] = [
     
     // Common
     "common.error": "Hata",
-    "common.success": "Başarılı"
+    "common.error": "Hata",
+    "common.success": "Başarılı",
+    "common.save": "Kaydet",
+    "common.add": "Ekle",
+    
+    // Additional Library Keys
+    "library.add_title": "Uygulama Ekle",
+    "library.search_placeholder": "Uygulama ara...",
+    "library.select_file": "Dosyadan Seç...",
+    "library.edit_title": "Uygulamayı Düzenle",
+    "library.app_name": "Uygulama Adı"
 ]
 
 private let EnglishStrings: [String: String] = [
@@ -146,6 +161,11 @@ private let EnglishStrings: [String: String] = [
     "preset.game": "Gaming",
     "preset.streaming": "Streaming",
     "preset.privacy": "Privacy",
+    
+    // Sidebar
+    "sidebar.general": "General",
+    "sidebar.config": "Configuration",
+    "sidebar.system": "System",
     
     // Settings
     "settings.title": "Settings",
@@ -211,5 +231,15 @@ private let EnglishStrings: [String: String] = [
     
     // Common
     "common.error": "Error",
-    "common.success": "Success"
+    "common.error": "Error",
+    "common.success": "Success",
+    "common.save": "Save",
+    "common.add": "Add",
+    
+    // Additional Library Keys
+    "library.add_title": "Add Application",
+    "library.search_placeholder": "Search apps...",
+    "library.select_file": "Select from File...",
+    "library.edit_title": "Edit Application",
+    "library.app_name": "App Name"
 ]

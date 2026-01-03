@@ -164,6 +164,17 @@ class ServiceManager: ObservableObject {
         runCommand("/usr/bin/open", args: args)
     }
     
+    func launchVesktop() {
+        let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
+        let args = [
+            "-a", "/Applications/Vesktop.app/Contents/MacOS/Vesktop",
+            "--args",
+            "--proxy-server=socks5://127.0.0.1:\(port)",
+            "--ignore-certificate-errors"
+        ]
+        runCommand("/usr/bin/open", args: args)
+    }
+    
     private func createPlist() {
         let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
         let splitMode = UserDefaults.standard.string(forKey: "splitMode") ?? "1+s"
@@ -180,32 +191,18 @@ class ServiceManager: ObservableObject {
             <string>com.baymacdpi.ciadpi</string>
             <key>ProgramArguments</key>
             <array>
-<<<<<<< HEAD
                 <string>\(byedpiPath)</string>
-                <string>-i</string>
-                <string>127.0.0.1</string>
-                <string>-p</string>
-                <string>\(port)</string>
-                <string>-s</string>
-                <string>1</string>
-=======
-                <string>\(byedpiDetails.path)</string>
                 <string>-r</string>
                 <string>1+s</string>
->>>>>>> parent of f1948f8 (refactor: use variables for byedpi and log paths in launchd plist configuration)
             </array>
             <key>RunAtLoad</key>
             <true/>
             <key>KeepAlive</key>
             <true/>
             <key>StandardOutPath</key>
-            <string>/Users/abdullah/.byedpi/byedpi.log</string>
-            <key>StandardErrorPath</key>
-<<<<<<< HEAD
             <string>\(logPath)</string>
-=======
-            <string>/Users/abdullah/.byedpi/byedpi_error.log</string>
->>>>>>> parent of f1948f8 (refactor: use variables for byedpi and log paths in launchd plist configuration)
+            <key>StandardErrorPath</key>
+            <string>\(logPath)</string>
         </dict>
         </plist>
         """

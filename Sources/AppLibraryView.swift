@@ -60,9 +60,11 @@ struct AppLibraryView: View {
                             cardBg: cardBg,
                             textColor: textColor,
                             onLaunch: { 
-                                // Specialized launch for Discord if needed, otherwise generic
+                                // Specialized launch for Discord/Vesktop
                                 if app.name == "Discord" {
                                     service.launchDiscord()
+                                } else if app.name == "Vesktop" {
+                                    service.launchVesktop()
                                 } else {
                                     launchApp(app)
                                 }
@@ -99,6 +101,13 @@ struct AppLibraryView: View {
     func loadApps() {
         if let decoded = try? JSONDecoder().decode([AppItem].self, from: savedAppsData) {
             apps = decoded
+        }
+        
+        // Ensure Vesktop is present if installed
+        if !apps.contains(where: { $0.name == "Vesktop" }) && FileManager.default.fileExists(atPath: "/Applications/Vesktop.app") {
+            let vesktop = AppItem(name: "Vesktop", path: "/Applications/Vesktop.app")
+            apps.append(vesktop)
+            saveApps()
         }
         
         // Add default apps if first run
@@ -278,11 +287,11 @@ struct AddAppSheet: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Uygulama Ekle")
+                Text(L("library.add_title"))
                     .font(.headline)
                     .foregroundColor(textColor)
                 Spacer()
-                Button("İptal") { dismiss() }
+                Button(L("library.cancel")) { dismiss() }
                     .foregroundColor(.blue)
             }
             .padding()
@@ -293,8 +302,7 @@ struct AddAppSheet: View {
             // Search
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                TextField("Uygulama ara...", text: $searchText)
+                TextField(L("library.search_placeholder"), text: $searchText)
                     .textFieldStyle(PlainTextFieldStyle())
                     .foregroundColor(textColor)
             }
@@ -340,7 +348,7 @@ struct AddAppSheet: View {
             
             // Actions
             HStack {
-                Button("Dosyadan Seç...") {
+                Button(L("library.select_file")) {
                     let panel = NSOpenPanel()
                     panel.allowedContentTypes = [.application]
                     if panel.runModal() == .OK, let url = panel.url {
@@ -354,7 +362,7 @@ struct AddAppSheet: View {
                 
                 Spacer()
                 
-                Button("Ekle") {
+                Button(L("common.add")) {
                     if let app = selectedApp {
                         let newApp = AppItem(name: app.name, path: app.path)
                         onAdd(newApp)
@@ -387,7 +395,7 @@ struct EditAppSheet: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Uygulamayı Düzenle")
+            Text(L("library.edit_title"))
                 .font(.headline)
                 .foregroundColor(textColor)
             
@@ -396,7 +404,7 @@ struct EditAppSheet: View {
                     .frame(width: 48, height: 48)
                 
                 VStack(alignment: .leading) {
-                    TextField("Uygulama Adı", text: $name)
+                    TextField(L("library.app_name"), text: $name)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     Text(app.path)
                         .font(.caption)
@@ -405,7 +413,7 @@ struct EditAppSheet: View {
             }
             
             VStack(alignment: .leading, spacing: 6) {
-                Text("Özel Argümanlar")
+                Text(L("protocols.custom_args"))
                     .font(.subheadline)
                     .foregroundColor(textColor)
                 TextField("--proxy-server=socks5://127.0.0.1:1080", text: $customArgs)
@@ -413,10 +421,10 @@ struct EditAppSheet: View {
             }
             
             HStack {
-                Button("İptal") { dismiss() }
+                Button(L("library.cancel")) { dismiss() }
                     .foregroundColor(.blue)
                 Spacer()
-                Button("Kaydet") {
+                Button(L("common.save")) {
                     var updated = app
                     updated.name = name
                     updated.customArgs = customArgs

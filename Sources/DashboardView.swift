@@ -194,6 +194,15 @@ struct DashboardView: View {
     }
     
     func launchApp(_ app: AppItem) {
+        if app.name == "Vesktop" {
+            service.launchVesktop()
+            return
+        }
+        if app.name == "Discord" {
+            service.launchDiscord()
+            return
+        }
+
         let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
         var args = ["-a", app.path, "--args", "--proxy-server=socks5://127.0.0.1:\(port)"]
         

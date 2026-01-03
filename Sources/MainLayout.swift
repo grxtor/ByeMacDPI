@@ -24,27 +24,27 @@ struct MainLayout: View {
                 VStack(spacing: 0) {
                     // Navigation List
                     List(selection: $selectedTab) {
-                        Section(header: Text("Genel").foregroundColor(.gray)) {
+                        Section(header: Text(L("sidebar.general")).foregroundColor(.gray)) {
                             NavigationLink(value: "dashboard") {
-                                Label("Dashboard", systemImage: "gauge.with.dots.needle.bottom.50percent")
+                                Label(L("dashboard.title"), systemImage: "gauge.with.dots.needle.bottom.50percent")
                             }
                             NavigationLink(value: "library") {
-                                Label("Uygulamalar", systemImage: "square.grid.2x2.fill")
+                                Label(L("library.title"), systemImage: "square.grid.2x2.fill")
                             }
                         }
                         
-                        Section(header: Text("Yapılandırma").foregroundColor(.gray)) {
+                        Section(header: Text(L("sidebar.config")).foregroundColor(.gray)) {
                             NavigationLink(value: "protocols") {
-                                Label("Protokoller", systemImage: "arrow.triangle.branch")
+                                Label(L("protocols.title"), systemImage: "arrow.triangle.branch")
                             }
                             NavigationLink(value: "dns") {
-                                Label("DNS Tester", systemImage: "network")
+                                Label(L("onboarding.step2"), systemImage: "network")
                             }
                         }
                         
-                        Section(header: Text("Sistem").foregroundColor(.gray)) {
+                        Section(header: Text(L("sidebar.system")).foregroundColor(.gray)) {
                             NavigationLink(value: "settings") {
-                                Label("Ayarlar", systemImage: "gearshape.fill")
+                                Label(L("settings.title"), systemImage: "gearshape.fill")
                             }
                         }
                     }
@@ -84,11 +84,21 @@ struct MainLayout: View {
                     .background(backgroundColor)
                     
                     // Custom Top Bar for Detail View
-                    TopBar(title: (selectedTab ?? "dashboard").capitalized, theme: appTheme)
+                    TopBar(title: getTitle(for: selectedTab), theme: appTheme)
                 }
             }
             .background(VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow).edgesIgnoringSafeArea(.all))
             .preferredColorScheme(appTheme == "light" ? .light : .dark)
+        }
+    }
+    func getTitle(for tab: String?) -> String {
+        switch tab {
+        case "dashboard": return L("dashboard.title")
+        case "library": return L("library.title")
+        case "protocols": return L("protocols.title")
+        case "dns": return L("onboarding.step2")
+        case "settings": return L("settings.title")
+        default: return L("dashboard.title")
         }
     }
 }

@@ -187,7 +187,7 @@ struct SettingsView: View {
                                 Text("BayMacDPI")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(textColor)
-                                Text("\(L("settings.about.version")) 2.2")
+                                Text("\(L("settings.about.version")) \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "3.0")")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }
