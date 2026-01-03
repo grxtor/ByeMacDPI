@@ -3,9 +3,11 @@ import AppKit
 
 @main
 struct ByeMacDPIApp: App {
-    @StateObject private var service = ServiceManager()
+    @StateObject private var service = ServiceManager.shared
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
+    
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
         WindowGroup {
@@ -67,5 +69,28 @@ struct ByeMacDPIApp: App {
                 }
             }
         }
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return true
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        print("[ByeMacDPI] 🚨 Application terminating, cleaning up...")
+        
+        // 1. Disable System Proxy (Synchronous)
+        ServiceManager.shared.disableSystemProxy()
+        
+        // 2. Kill Service Forcefully (Synchronous)
+        let kill = Process()
+        kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        kill.arguments = ["-9", "ciadpi"]
+        // Silent
+        kill.standardOutput = FileHandle.nullDevice
+        kill.standardError = FileHandle.nullDevice
+        try? kill.run()
+        kill.waitUntilExit()
     }
 }

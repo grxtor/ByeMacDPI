@@ -143,6 +143,8 @@ struct PresetManager {
 }
 
 class ServiceManager: ObservableObject {
+    static let shared = ServiceManager()
+    
     @Published var isRunning: Bool = false
     @Published var isProcessing: Bool = false
     @Published var statusMessage: String = L("dashboard.inactive")
