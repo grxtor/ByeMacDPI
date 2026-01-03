@@ -200,10 +200,28 @@ class ServiceManager: ObservableObject {
     
     init() {
         self.binaryPath = byedpiPath
-        checkStatus()
         checkAutoStartStatus()
-        if isRunning { startTimer() }
-        startStatusSync()
+        
+        // Clean start: Kill any stale processes first
+        DispatchQueue.global(qos: .userInitiated).async {
+            let kill = Process()
+            kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            kill.arguments = ["-9", "ciadpi"]
+            kill.standardOutput = FileHandle.nullDevice
+            kill.standardError = FileHandle.nullDevice
+            try? kill.run()
+            kill.waitUntilExit()
+            
+            DispatchQueue.main.async {
+                if self.autoStartEnabled {
+                    print("[ByeMacDPI] 🚀 Auto-starting clean service...")
+                    self.startService()
+                } else {
+                    self.checkStatus()
+                }
+                self.startStatusSync()
+            }
+        }
     }
     
     func startStatusSync() {
