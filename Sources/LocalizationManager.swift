@@ -131,7 +131,7 @@ private let TurkishStrings: [String: String] = [
     "onboarding.ready": "Hazır",
     
     // Common
-    "common.error": "Hata",
+    // Common
     "common.error": "Hata",
     "common.success": "Başarılı",
     "common.save": "Kaydet",
@@ -230,7 +230,7 @@ private let EnglishStrings: [String: String] = [
     "onboarding.ready": "Ready",
     
     // Common
-    "common.error": "Error",
+    // Common
     "common.error": "Error",
     "common.success": "Success",
     "common.save": "Save",
