@@ -29,3 +29,4 @@ xcuserdata/
 
 # ByeDPI specific
 *.log
+Build/
