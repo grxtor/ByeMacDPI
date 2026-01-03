@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![ByeMacDPI Logo](Screenshots/logo.png)
+![ByeMacDPI Logo](Screenshots/ByeMacDPI.png)
 
 **macOS için DPI Bypass Aracı** | **DPI Bypass Tool for macOS**
 
