@@ -346,6 +346,7 @@ class ServiceManager: ObservableObject {
         self.log("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
         
         var args = ["-i", "127.0.0.1", "-p", port]
+        args += ["-x", "1"] // Enable debug logs
         
         // Advanced Params
         args += ["-c", maxConnValue]
