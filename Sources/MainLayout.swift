@@ -46,6 +46,9 @@ struct MainLayout: View {
                             NavigationLink(value: "settings") {
                                 Label(L("settings.title"), systemImage: "gearshape.fill")
                             }
+                            NavigationLink(value: "logs") {
+                                Label("Logs", systemImage: "terminal.fill")
+                            }
                         }
                     }
                     .listStyle(SidebarListStyle())
@@ -78,6 +81,7 @@ struct MainLayout: View {
                         case "protocols": ProtocolsView(service: service)
                         case "dns": DNSToolsView(service: service)
                         case "settings": SettingsView(service: service)
+                        case "logs": LogView(service: service)
                         default: DashboardView(service: service)
                         }
                     }
@@ -99,6 +103,7 @@ struct MainLayout: View {
         case "protocols": return L("protocols.title")
         case "dns": return L("onboarding.step2")
         case "settings": return L("settings.title")
+        case "logs": return "Logs"
         default: return L("dashboard.title")
         }
     }

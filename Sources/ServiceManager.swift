@@ -121,6 +121,17 @@ struct PresetManager {
 class ServiceManager: ObservableObject {
     static let shared = ServiceManager()
     
+    private func log(_ message: String) {
+        print(message)
+        DispatchQueue.main.async {
+            self.logs += message + "\n"
+            // Keep last 10000 chars
+            if self.logs.count > 10000 {
+                self.logs = String(self.logs.suffix(10000))
+            }
+        }
+    }
+    
     @Published var isRunning: Bool = false
     @Published var isProcessing: Bool = false
     @Published var statusMessage: String = L("dashboard.inactive")
@@ -128,6 +139,8 @@ class ServiceManager: ObservableObject {
     @Published var connectionTime: Int = 0
     @Published var binaryPath: String = ""
     @Published var errorMessage: String? = nil
+    @Published var logs: String = ""
+    private var logPipe: Pipe?
     
     @AppStorage("autoStartEnabled") var autoStartEnabled: Bool = false
     @AppStorage("systemProxyEnabled") var systemProxyEnabled: Bool = false
@@ -192,7 +205,7 @@ class ServiceManager: ObservableObject {
             
             DispatchQueue.main.async {
                 if self.autoStartEnabled {
-                    print("[ByeMacDPI] 🚀 Auto-starting clean service...")
+                    log("[ByeMacDPI] 🚀 Auto-starting clean service...")
                     self.startService()
                 } else {
                     self.checkStatus()
@@ -266,7 +279,7 @@ class ServiceManager: ObservableObject {
     }
     
     func restartService() {
-        print("[ByeMacDPI] 🔄 Restarting Service...")
+        log("[ByeMacDPI] 🔄 Restarting Service...")
         if isRunning {
             stopService {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -282,7 +295,7 @@ class ServiceManager: ObservableObject {
         // Ensure binary exists
         let binary = byedpiPath
         if !FileManager.default.fileExists(atPath: binary) {
-             print("[ByeMacDPI] ❌ Binary not found at \(binary)")
+             log("[ByeMacDPI] ❌ Binary not found at \(binary)")
              DispatchQueue.main.async {
                  self.errorMessage = "Hata: CiaDPI binary dosyası bulunamadı!\nKonum: \(binary)"
                  self.statusMessage = "Binary Hatası"
@@ -293,7 +306,7 @@ class ServiceManager: ObservableObject {
         
         // Ensure executable
         if !FileManager.default.isExecutableFile(atPath: binary) {
-             print("[ByeMacDPI] ⚠️ Binary not executable, attempting chmod +x")
+             log("[ByeMacDPI] ⚠️ Binary not executable, attempting chmod +x")
              let chmod = Process()
              chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
              chmod.arguments = ["+x", binary]
@@ -327,10 +340,10 @@ class ServiceManager: ObservableObject {
         let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
-        print("[ByeMacDPI] ══════════════════════════════════════")
-        print("[ByeMacDPI] 🚀 Starting ByeDPI Service")
-        print("[ByeMacDPI] ──────────────────────────────────────")
-        print("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
+        log("[ByeMacDPI] ══════════════════════════════════════")
+        log("[ByeMacDPI] 🚀 Starting ByeDPI Service")
+        log("[ByeMacDPI] ──────────────────────────────────────")
+        log("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
         
         var args = ["-i", "127.0.0.1", "-p", port]
         
@@ -353,7 +366,7 @@ class ServiceManager: ObservableObject {
         if activePreset == "custom" && !customArgs.isEmpty {
              let customArgsParsed = customArgs.split(separator: " ").map(String.init)
              args += customArgsParsed
-             print("[ByeMacDPI] 🔧 Custom Args: \(customArgs)")
+             log("[ByeMacDPI] 🔧 Custom Args: \(customArgs)")
         } else if let preset = PresetManager.preset(for: activePreset) {
             args += preset.args
             
@@ -366,37 +379,48 @@ class ServiceManager: ObservableObject {
                     args[idx + 1] = ttlValue
                 }
             }
-            print("[ByeMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
+            log("[ByeMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
         } else {
             args += ["--split", "1+s"]
-            print("[ByeMacDPI] ⚠️  Preset not found, using default")
+            log("[ByeMacDPI] ⚠️  Preset not found, using default")
         }
         
-        print("[ByeMacDPI] ──────────────────────────────────────")
-        print("[ByeMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
-        print("[ByeMacDPI] ══════════════════════════════════════")
+        log("[ByeMacDPI] ──────────────────────────────────────")
+        log("[ByeMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
+        log("[ByeMacDPI] ══════════════════════════════════════")
         
         // Start ciadpi directly
         DispatchQueue.global(qos: .userInitiated).async {
             let task = Process()
             task.executableURL = URL(fileURLWithPath: binary)
             task.arguments = args
-            task.standardOutput = FileHandle.nullDevice
-            task.standardError = FileHandle.nullDevice
+            
+            // Capture output
+            let pipe = Pipe()
+            self.logPipe = pipe
+            task.standardOutput = pipe
+            task.standardError = pipe
+            
+            pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                let data = handle.availableData
+                if let str = String(data: data, encoding: .utf8), !str.isEmpty {
+                    self?.log(str.trimmingCharacters(in: .newlines))
+                }
+            }
             
             do {
                 try task.run()
-                print("[ByeMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
+                log("[ByeMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
                 
                 DispatchQueue.main.async {
                     self.waitForStatus(target: true)
                     if self.systemProxyEnabled {
-                        print("[ByeMacDPI] 🌐 Enabling System Proxy on port \(port)...")
+                        log("[ByeMacDPI] 🌐 Enabling System Proxy on port \(port)...")
                         self.enableSystemProxy(port: port)
                     }
                 }
             } catch {
-                print("[ByeMacDPI] ❌ Failed to start: \(error)")
+                log("[ByeMacDPI] ❌ Failed to start: \(error)")
                 DispatchQueue.main.async {
                     self.errorMessage = "Servis başlatılamadı:\n\(error.localizedDescription)"
                     self.statusMessage = L("common.error")
@@ -410,7 +434,7 @@ class ServiceManager: ObservableObject {
         isProcessing = true
         statusMessage = L("dashboard.stopping")
         
-        print("[ByeMacDPI] 🛑 Stopping ByeDPI Service...")
+        log("[ByeMacDPI] 🛑 Stopping ByeDPI Service...")
         
         DispatchQueue.global(qos: .userInitiated).async {
             // 1. Unload from launchd (in case it was loaded previously)
@@ -441,10 +465,10 @@ class ServiceManager: ObservableObject {
             try? pkillTask.run()
             pkillTask.waitUntilExit()
             
-            print("[ByeMacDPI] ✅ ByeDPI Service stopped")
+            log("[ByeMacDPI] ✅ ByeDPI Service stopped")
             
             DispatchQueue.main.async {
-                print("[ByeMacDPI] 🌐 Disabling System Proxy...")
+                log("[ByeMacDPI] 🌐 Disabling System Proxy...")
                 self.disableSystemProxy()
                 self.waitForStatus(target: false)
                 completion?()
