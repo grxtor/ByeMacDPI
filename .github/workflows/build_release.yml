@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build and Release
-    runs-on: macos-15  # Apple Silicon (Latest)
+    runs-on: macos-26 # Apple Silicon (Latest)
     permissions:
       contents: write
 
