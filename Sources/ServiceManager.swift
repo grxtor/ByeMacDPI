@@ -205,7 +205,7 @@ class ServiceManager: ObservableObject {
             
             DispatchQueue.main.async {
                 if self.autoStartEnabled {
-                    log("[ByeMacDPI] 🚀 Auto-starting clean service...")
+                    self.log("[ByeMacDPI] 🚀 Auto-starting clean service...")
                     self.startService()
                 } else {
                     self.checkStatus()
@@ -279,7 +279,7 @@ class ServiceManager: ObservableObject {
     }
     
     func restartService() {
-        log("[ByeMacDPI] 🔄 Restarting Service...")
+        self.log("[ByeMacDPI] 🔄 Restarting Service...")
         if isRunning {
             stopService {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -295,7 +295,7 @@ class ServiceManager: ObservableObject {
         // Ensure binary exists
         let binary = byedpiPath
         if !FileManager.default.fileExists(atPath: binary) {
-             log("[ByeMacDPI] ❌ Binary not found at \(binary)")
+             self.log("[ByeMacDPI] ❌ Binary not found at \(binary)")
              DispatchQueue.main.async {
                  self.errorMessage = "Hata: CiaDPI binary dosyası bulunamadı!\nKonum: \(binary)"
                  self.statusMessage = "Binary Hatası"
@@ -306,7 +306,7 @@ class ServiceManager: ObservableObject {
         
         // Ensure executable
         if !FileManager.default.isExecutableFile(atPath: binary) {
-             log("[ByeMacDPI] ⚠️ Binary not executable, attempting chmod +x")
+             self.log("[ByeMacDPI] ⚠️ Binary not executable, attempting chmod +x")
              let chmod = Process()
              chmod.executableURL = URL(fileURLWithPath: "/bin/chmod")
              chmod.arguments = ["+x", binary]
@@ -340,10 +340,10 @@ class ServiceManager: ObservableObject {
         let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
-        log("[ByeMacDPI] ══════════════════════════════════════")
-        log("[ByeMacDPI] 🚀 Starting ByeDPI Service")
-        log("[ByeMacDPI] ──────────────────────────────────────")
-        log("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
+        self.log("[ByeMacDPI] ══════════════════════════════════════")
+        self.log("[ByeMacDPI] 🚀 Starting ByeDPI Service")
+        self.log("[ByeMacDPI] ──────────────────────────────────────")
+        self.log("[ByeMacDPI] 📋 Active Preset: \(activePreset)")
         
         var args = ["-i", "127.0.0.1", "-p", port]
         
@@ -366,7 +366,7 @@ class ServiceManager: ObservableObject {
         if activePreset == "custom" && !customArgs.isEmpty {
              let customArgsParsed = customArgs.split(separator: " ").map(String.init)
              args += customArgsParsed
-             log("[ByeMacDPI] 🔧 Custom Args: \(customArgs)")
+             self.log("[ByeMacDPI] 🔧 Custom Args: \(customArgs)")
         } else if let preset = PresetManager.preset(for: activePreset) {
             args += preset.args
             
@@ -379,15 +379,15 @@ class ServiceManager: ObservableObject {
                     args[idx + 1] = ttlValue
                 }
             }
-            log("[ByeMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
+            self.log("[ByeMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
         } else {
             args += ["--split", "1+s"]
-            log("[ByeMacDPI] ⚠️  Preset not found, using default")
+            self.log("[ByeMacDPI] ⚠️  Preset not found, using default")
         }
         
-        log("[ByeMacDPI] ──────────────────────────────────────")
-        log("[ByeMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
-        log("[ByeMacDPI] ══════════════════════════════════════")
+        self.log("[ByeMacDPI] ──────────────────────────────────────")
+        self.log("[ByeMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
+        self.log("[ByeMacDPI] ══════════════════════════════════════")
         
         // Start ciadpi directly
         DispatchQueue.global(qos: .userInitiated).async {
@@ -410,17 +410,17 @@ class ServiceManager: ObservableObject {
             
             do {
                 try task.run()
-                log("[ByeMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
+                self.log("[ByeMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
                 
                 DispatchQueue.main.async {
                     self.waitForStatus(target: true)
                     if self.systemProxyEnabled {
-                        log("[ByeMacDPI] 🌐 Enabling System Proxy on port \(port)...")
+                        self.log("[ByeMacDPI] 🌐 Enabling System Proxy on port \(port)...")
                         self.enableSystemProxy(port: port)
                     }
                 }
             } catch {
-                log("[ByeMacDPI] ❌ Failed to start: \(error)")
+                self.log("[ByeMacDPI] ❌ Failed to start: \(error)")
                 DispatchQueue.main.async {
                     self.errorMessage = "Servis başlatılamadı:\n\(error.localizedDescription)"
                     self.statusMessage = L("common.error")
@@ -434,7 +434,7 @@ class ServiceManager: ObservableObject {
         isProcessing = true
         statusMessage = L("dashboard.stopping")
         
-        log("[ByeMacDPI] 🛑 Stopping ByeDPI Service...")
+        self.log("[ByeMacDPI] 🛑 Stopping ByeDPI Service...")
         
         DispatchQueue.global(qos: .userInitiated).async {
             // 1. Unload from launchd (in case it was loaded previously)
@@ -465,10 +465,10 @@ class ServiceManager: ObservableObject {
             try? pkillTask.run()
             pkillTask.waitUntilExit()
             
-            log("[ByeMacDPI] ✅ ByeDPI Service stopped")
+            self.log("[ByeMacDPI] ✅ ByeDPI Service stopped")
             
             DispatchQueue.main.async {
-                log("[ByeMacDPI] 🌐 Disabling System Proxy...")
+                self.log("[ByeMacDPI] 🌐 Disabling System Proxy...")
                 self.disableSystemProxy()
                 self.waitForStatus(target: false)
                 completion?()
