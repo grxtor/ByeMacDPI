@@ -124,6 +124,9 @@ class ServiceManager: ObservableObject {
         isProcessing = true
         statusMessage = L("dashboard.starting")
         
+        // Force cleanup old processes
+        runCommand("/usr/bin/killall", args: ["ciadpi"])
+        
         createPlist()
         runCommand("/bin/launchctl", args: ["load", plistPath])
         
@@ -143,6 +146,9 @@ class ServiceManager: ObservableObject {
         statusMessage = L("dashboard.stopping")
         
         runCommand("/bin/launchctl", args: ["unload", plistPath])
+        // Force cleanup just in case
+        runCommand("/usr/bin/killall", args: ["ciadpi"])
+        
         disableSystemProxy()
         
         DispatchQueue.global().async {
