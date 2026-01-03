@@ -1,26 +1,27 @@
-# BayMacDPI v3.0.7 Release Notes
+# BayMacDPI v3.0.9 Release Notes
 
-**Major Update: Polished Experience & Stability**
+**Stable Release: Gatekeeper & Connectivity Fixes**
 
-This release brings a massive overhaul to the user experience, localization, and core stability.
+This is the definitive stable release that resolves all installation and connectivity issues on macOS.
+
+### 🛡️ Critical Fixes (v3.0.9)
+*   **Gatekeeper Approval:** Fixed an issue where the embedded `ciadpi` binary was blocked by macOS Gatekeeper even after the app was approved. Both the app and the binary are now correctly signed.
+*   **"App is Damaged" Fix:** Automated quarantine removal ensures the app runs immediately after unzipping.
 
 ### 📦 Distribution
-*   **ZIP Package:** Now distributed as a simple ZIP file for easier installation.
+*   **ZIP Package:** Now distributed as a simple ZIP file. Just unzip, move to Applications, and run!
 
 ### 🎨 UI & UX Improvements
-*   **Full Localization:** Complete Turkish 🇹🇷 and English 🇺🇸 support across the entire app.
-*   **Visual Feedback:** Added pulsating animations and loading spinner when starting/stopping.
-*   **Clear Status:** Replaced "Checking..." with specific "Starting..." / "Stopping..." indicators.
+*   **Full Localization:** Complete Turkish 🇹🇷 and English 🇺🇸 support.
+*   **Visual Feedback:** Pulsating animations and loading spinners for Start/Stop actions.
+*   **Clear Status:** "Starting..." / "Stopping..." indicators instead of generic checking text.
 
 ### 🚀 Core Functionality
-*   **Vesktop Support:** Added native support for launching Vesktop through the proxy.
-*   **Bundled Engine:** The `ciadpi` binary is now embedded within the app.
-*   **Smart Sync:** Service status syncs with UI using real-time polling.
-
-### 🛠 Fixes & Stability
-*   **Crash Loop Fixed:** Resolved "Gaming Mode" crash loop issue.
-*   **Config Fix:** Custom Port and Split Mode settings now work correctly.
-*   **Orphan Cleaner:** Forces cleanup of old processes before starting.
+*   **Vesktop Support:** Native support for launching Vesktop.
+*   **Bundled Engine:** Embedded `ciadpi` binary (ARM64 Optimized).
+*   **Smart Sync:** Real-time service status polling.
+*   **Crash Loop Fixed:** Resolved "Gaming Mode" crash issues.
+*   **Orphan Cleaner:** Auto-cleans old processes to prevent port conflicts.
 
 ---
 *Recommended for all users.*
