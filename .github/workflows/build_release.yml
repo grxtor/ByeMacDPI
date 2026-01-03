@@ -20,8 +20,15 @@ jobs:
       - name: Build Application
         run: |
           chmod +x build_app.sh
-          # Binary is now bundled in Resources/
           ./build_app.sh
+
+      - name: Remove Quarantine Attributes
+        run: |
+          # Remove all extended attributes that can block execution
+          xattr -cr Build/BayMacDPI.app
+          # Ensure binary is executable
+          chmod +x Build/BayMacDPI.app/Contents/MacOS/BayMacDPI
+          chmod +x Build/BayMacDPI.app/Contents/Resources/ciadpi
 
       - name: Package App as ZIP
         run: |
