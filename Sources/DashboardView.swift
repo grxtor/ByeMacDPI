@@ -35,16 +35,25 @@ struct DashboardView: View {
                         }) {
                             ZStack {
                                 Circle()
-                                    .fill(service.isRunning ? Color.green : Color(white: appTheme == "light" ? 0.8 : 0.2))
+                                    .fill(service.isProcessing ? Color.yellow : (service.isRunning ? Color.green : Color(white: appTheme == "light" ? 0.8 : 0.2)))
                                     .frame(width: 70, height: 70)
                                     .shadow(color: service.isRunning ? .green.opacity(0.4) : .clear, radius: 12)
+                                    .scaleEffect(service.isProcessing ? 0.95 : 1.0)
+                                    .animation(service.isProcessing ? Animation.easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default, value: service.isProcessing)
                                 
-                                Image(systemName: "power")
-                                    .font(.system(size: 28, weight: .medium))
-                                    .foregroundColor(.white)
+                                if service.isProcessing {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(1.2)
+                                } else {
+                                    Image(systemName: "power")
+                                        .font(.system(size: 28, weight: .medium))
+                                        .foregroundColor(.white)
+                                }
                             }
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .disabled(service.isProcessing)
                         
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 8) {

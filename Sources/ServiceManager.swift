@@ -5,6 +5,7 @@ import SwiftUI
 
 class ServiceManager: ObservableObject {
     @Published var isRunning: Bool = false
+    @Published var isProcessing: Bool = false
     @Published var statusMessage: String = L("dashboard.inactive")
     @Published var pingResults: [String: String] = [:]
     @Published var connectionTime: Int = 0
@@ -102,6 +103,9 @@ class ServiceManager: ObservableObject {
                     }
                     self.statusMessage = self.isRunning ? L("dashboard.active") : L("dashboard.inactive")
                     self.binaryPath = self.byedpiPath
+                    withAnimation {
+                        self.isProcessing = false
+                    }
                 }
             } catch {
                 print("Status check error: \(error)")
@@ -117,10 +121,13 @@ class ServiceManager: ObservableObject {
         // Ensure binary exists
         _ = byedpiPath
         
+        isProcessing = true
+        statusMessage = L("onboarding.checking")
+        
         createPlist()
         runCommand("/bin/launchctl", args: ["load", plistPath])
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             self.checkStatus()
             if self.systemProxyEnabled {
                 let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
@@ -130,10 +137,13 @@ class ServiceManager: ObservableObject {
     }
     
     func stopService() {
+        isProcessing = true
+        statusMessage = L("onboarding.checking")
+        
         runCommand("/bin/launchctl", args: ["unload", plistPath])
         disableSystemProxy()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.checkStatus()
         }
     }
