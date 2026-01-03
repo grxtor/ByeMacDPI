@@ -161,8 +161,7 @@ struct ProtocolsView: View {
                         
                         // Toggles Row
                         HStack(spacing: 30) {
-                            Toggle("TCP Fast Open", isOn: $useTFO)
-                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+
                             
                             Toggle("No UDP", isOn: $noUDP)
                                 .toggleStyle(SwitchToggleStyle(tint: .orange))

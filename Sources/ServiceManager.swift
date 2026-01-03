@@ -68,15 +68,7 @@ struct PresetManager {
             args: ["--disorder", "1", "--split", "1+s", "--auto=torst"],
             proxyType: "socks5"
         ),
-        BypassPreset(
-            id: "discord_aggressive",
-            name: "Discord Aggressive",
-            localizedNameKey: "preset.discord_aggressive",
-            icon: "bolt.fill",
-            descriptionKey: "preset.discord_aggressive.desc",
-            args: ["--fake", "-1", "--ttl", "8", "--disorder", "1"],
-            proxyType: "socks5"
-        ),
+
         
         // Gelişmiş Bypass
         BypassPreset(
@@ -88,15 +80,7 @@ struct PresetManager {
             args: ["--tlsrec", "1+s", "--auto=torst"],
             proxyType: "socks5"
         ),
-        BypassPreset(
-            id: "paranoid",
-            name: "Paranoid",
-            localizedNameKey: "preset.paranoid",
-            icon: "lock.shield",
-            descriptionKey: "preset.paranoid.desc",
-            args: ["--fake", "-1", "--ttl", "5", "--disorder", "1", "--tlsrec", "3+s", "--oob", "3+s"],
-            proxyType: "socks5"
-        ),
+
         BypassPreset(
             id: "oob",
             name: "OOB",
@@ -106,15 +90,7 @@ struct PresetManager {
             args: ["--oob", "3+s", "--split", "1"],
             proxyType: "socks5"
         ),
-        BypassPreset(
-            id: "fake_ttl",
-            name: "Fake TTL",
-            localizedNameKey: "preset.fake_ttl",
-            icon: "clock.arrow.2.circlepath",
-            descriptionKey: "preset.fake_ttl.desc",
-            args: ["--fake", "-1", "--ttl", "4"],
-            proxyType: "socks5"
-        ),
+
         
         // Hafif Modlar
         BypassPreset(
@@ -347,7 +323,7 @@ class ServiceManager: ObservableObject {
         let maxConnValue = UserDefaults.standard.string(forKey: "maxConnections") ?? "512"
         let cacheTTL = UserDefaults.standard.string(forKey: "cacheTTL") ?? "100800"
         let autoMode = UserDefaults.standard.string(forKey: "autoMode") ?? "1"
-        let useTFO = UserDefaults.standard.bool(forKey: "useTFO")
+
         let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
@@ -367,9 +343,7 @@ class ServiceManager: ObservableObject {
             args += ["-g", defTTL]
         }
         
-        if useTFO {
-            args += ["-F"]
-        }
+
         
         if noUDP {
             args += ["-U"]
@@ -556,7 +530,7 @@ class ServiceManager: ObservableObject {
         let maxConnValue = UserDefaults.standard.string(forKey: "maxConnections") ?? "512"
         let cacheTTL = UserDefaults.standard.string(forKey: "cacheTTL") ?? "100800"
         let autoMode = UserDefaults.standard.string(forKey: "autoMode") ?? "1"
-        let useTFO = UserDefaults.standard.bool(forKey: "useTFO")
+
         let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
         let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
@@ -575,9 +549,7 @@ class ServiceManager: ObservableObject {
             args += ["-g", defTTL]
         }
         
-        if useTFO {
-            args += ["-F"]
-        }
+
         
         if noUDP {
             args += ["-U"]
