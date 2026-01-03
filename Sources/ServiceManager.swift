@@ -3,6 +3,145 @@ import Combine
 import AppKit
 import SwiftUI
 
+// MARK: - Bypass Preset Model
+struct BypassPreset: Identifiable, Codable, Hashable {
+    let id: String
+    let name: String
+    let localizedNameKey: String
+    let icon: String
+    let descriptionKey: String
+    let args: [String]
+    let proxyType: String
+    
+    var localizedName: String { L(localizedNameKey) }
+    var localizedDescription: String { L(descriptionKey) }
+}
+
+// MARK: - Preset Definitions
+struct PresetManager {
+    static let presets: [BypassPreset] = [
+        // Temel Modlar
+        BypassPreset(
+            id: "standard",
+            name: "Standard",
+            localizedNameKey: "preset.standard",
+            icon: "shield",
+            descriptionKey: "preset.standard.desc",
+            args: ["--split", "1+s"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "gaming",
+            name: "Gaming",
+            localizedNameKey: "preset.game",
+            icon: "gamecontroller",
+            descriptionKey: "preset.gaming.desc",
+            args: ["--disorder", "1", "--split", "1+s"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "streaming",
+            name: "Streaming",
+            localizedNameKey: "preset.streaming",
+            icon: "play.tv",
+            descriptionKey: "preset.streaming.desc",
+            args: ["--split", "2+s", "--auto=torst"],
+            proxyType: "http"
+        ),
+        BypassPreset(
+            id: "privacy",
+            name: "Privacy",
+            localizedNameKey: "preset.privacy",
+            icon: "eye.slash",
+            descriptionKey: "preset.privacy.desc",
+            args: ["--split", "1+s", "--tlsrec", "3+s"],
+            proxyType: "https"
+        ),
+        
+        // Discord Özel
+        BypassPreset(
+            id: "discord",
+            name: "Discord",
+            localizedNameKey: "preset.discord",
+            icon: "message",
+            descriptionKey: "preset.discord.desc",
+            args: ["--disorder", "1", "--split", "1+s", "--auto=torst"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "discord_aggressive",
+            name: "Discord Aggressive",
+            localizedNameKey: "preset.discord_aggressive",
+            icon: "bolt.fill",
+            descriptionKey: "preset.discord_aggressive.desc",
+            args: ["--fake", "-1", "--ttl", "8", "--disorder", "1"],
+            proxyType: "socks5"
+        ),
+        
+        // Gelişmiş Bypass
+        BypassPreset(
+            id: "stealth",
+            name: "Stealth",
+            localizedNameKey: "preset.stealth",
+            icon: "eye.trianglebadge.exclamationmark",
+            descriptionKey: "preset.stealth.desc",
+            args: ["--tlsrec", "1+s", "--auto=torst"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "paranoid",
+            name: "Paranoid",
+            localizedNameKey: "preset.paranoid",
+            icon: "lock.shield",
+            descriptionKey: "preset.paranoid.desc",
+            args: ["--fake", "-1", "--ttl", "5", "--disorder", "1", "--tlsrec", "3+s", "--oob", "3+s"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "oob",
+            name: "OOB",
+            localizedNameKey: "preset.oob",
+            icon: "arrow.up.message",
+            descriptionKey: "preset.oob.desc",
+            args: ["--oob", "3+s", "--split", "1"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "fake_ttl",
+            name: "Fake TTL",
+            localizedNameKey: "preset.fake_ttl",
+            icon: "clock.arrow.2.circlepath",
+            descriptionKey: "preset.fake_ttl.desc",
+            args: ["--fake", "-1", "--ttl", "4"],
+            proxyType: "socks5"
+        ),
+        
+        // Hafif Modlar
+        BypassPreset(
+            id: "light",
+            name: "Light",
+            localizedNameKey: "preset.light",
+            icon: "leaf",
+            descriptionKey: "preset.light.desc",
+            args: ["--split", "1"],
+            proxyType: "socks5"
+        ),
+        BypassPreset(
+            id: "custom",
+            name: "Custom",
+            localizedNameKey: "preset.custom",
+            icon: "slider.horizontal.3",
+            descriptionKey: "preset.custom.desc",
+            args: [],
+            proxyType: "socks5"
+        )
+    ]
+    
+    static func preset(for id: String) -> BypassPreset? {
+        presets.first { $0.id == id }
+    }
+}
+
 class ServiceManager: ObservableObject {
     @Published var isRunning: Bool = false
     @Published var isProcessing: Bool = false
@@ -10,12 +149,14 @@ class ServiceManager: ObservableObject {
     @Published var pingResults: [String: String] = [:]
     @Published var connectionTime: Int = 0
     @Published var binaryPath: String = ""
+    @Published var errorMessage: String? = nil
     
     @AppStorage("autoStartEnabled") var autoStartEnabled: Bool = false
     @AppStorage("systemProxyEnabled") var systemProxyEnabled: Bool = false
     @AppStorage("didAddDefaultApps") var didAddDefaultApps: Bool = false
     
     private var timer: Timer?
+    private var statusSyncTimer: Timer?
     private let plistName = "com.baymacdpi.ciadpi.plist"
     
     private var plistPath: String {
@@ -62,6 +203,14 @@ class ServiceManager: ObservableObject {
         checkStatus()
         checkAutoStartStatus()
         if isRunning { startTimer() }
+        startStatusSync()
+    }
+    
+    func startStatusSync() {
+        // Periodic check to ensure UI matches reality
+        statusSyncTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.checkStatus()
+        }
     }
     
     func checkAutoStartStatus() {
@@ -117,25 +266,131 @@ class ServiceManager: ObservableObject {
         if isRunning { stopService() } else { startService() }
     }
     
+    func restartService() {
+        print("[BayMacDPI] 🔄 Restarting Service...")
+        if isRunning {
+            stopService()
+            // Wait for stop and port release
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.startService()
+            }
+        } else {
+            startService()
+        }
+    }
+    
     func startService() {
         // Ensure binary exists
-        _ = byedpiPath
+        let binary = byedpiPath
+        guard FileManager.default.fileExists(atPath: binary) else {
+            print("[BayMacDPI] Binary not found: \(binary)")
+            return
+        }
         
         isProcessing = true
         statusMessage = L("dashboard.starting")
         
-        // Force cleanup old processes
-        runCommand("/usr/bin/killall", args: ["ciadpi"])
+        // Force cleanup old processes first (silently)
+        let killTask = Process()
+        killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        killTask.arguments = ["-9", "ciadpi"]
+        killTask.standardOutput = FileHandle.nullDevice
+        killTask.standardError = FileHandle.nullDevice
+        try? killTask.run()
+        killTask.waitUntilExit()
         
-        createPlist()
-        runCommand("/bin/launchctl", args: ["load", plistPath])
+        // Small delay after cleanup
+        Thread.sleep(forTimeInterval: 0.5)
         
-        DispatchQueue.global().async {
-            self.waitForStatus(target: true)
-            DispatchQueue.main.async {
-                if self.systemProxyEnabled {
-                    let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
-                    self.enableSystemProxy(port: port)
+        // Build arguments from settings
+        let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
+        let activePreset = UserDefaults.standard.string(forKey: "activePreset") ?? "standard"
+        let customArgs = UserDefaults.standard.string(forKey: "customByedpiArgs") ?? ""
+        
+        let ttlValue = UserDefaults.standard.string(forKey: "ttlValue") ?? "8"
+        // let timeout = UserDefaults.standard.string(forKey: "connectionTimeout") ?? "5" // Deprecated
+        let maxConnValue = UserDefaults.standard.string(forKey: "maxConnections") ?? "512"
+        let cacheTTL = UserDefaults.standard.string(forKey: "cacheTTL") ?? "100800"
+        let autoMode = UserDefaults.standard.string(forKey: "autoMode") ?? "1"
+        let useTFO = UserDefaults.standard.bool(forKey: "useTFO")
+        let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
+        let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
+        
+        print("[BayMacDPI] ══════════════════════════════════════")
+        print("[BayMacDPI] 🚀 Starting ByeDPI Service")
+        print("[BayMacDPI] ──────────────────────────────────────")
+        print("[BayMacDPI] 📋 Active Preset: \(activePreset)")
+        
+        var args = ["-i", "127.0.0.1", "-p", port]
+        
+        // Advanced Params
+        args += ["-c", maxConnValue]
+        args += ["-u", cacheTTL]
+        args += ["-L", autoMode]
+        
+        if !defTTL.isEmpty {
+            args += ["-g", defTTL]
+        }
+        
+        if useTFO {
+            args += ["-F"]
+        }
+        
+        if noUDP {
+            args += ["-U"]
+        }
+        
+        // Preset / Custom Args
+        if activePreset == "custom" && !customArgs.isEmpty {
+             let customArgsParsed = customArgs.split(separator: " ").map(String.init)
+             args += customArgsParsed
+             print("[BayMacDPI] 🔧 Custom Args: \(customArgs)")
+        } else if let preset = PresetManager.preset(for: activePreset) {
+            args += preset.args
+            
+            // Override TTL if fake mode is used
+            if preset.args.contains("--fake") || preset.args.contains("-f") {
+                // Find existing TTL
+                if let idx = args.firstIndex(of: "--ttl"), idx + 1 < args.count {
+                    args[idx + 1] = ttlValue
+                } else if let idx = args.firstIndex(of: "-t"), idx + 1 < args.count {
+                    args[idx + 1] = ttlValue
+                }
+            }
+            print("[BayMacDPI] 🎯 Preset Args: \(preset.args.joined(separator: " "))")
+        } else {
+            args += ["--split", "1+s"]
+            print("[BayMacDPI] ⚠️  Preset not found, using default")
+        }
+        
+        print("[BayMacDPI] ──────────────────────────────────────")
+        print("[BayMacDPI] 📝 Full Command: ciadpi \(args.joined(separator: " "))")
+        print("[BayMacDPI] ══════════════════════════════════════")
+        
+        // Start ciadpi directly
+        DispatchQueue.global(qos: .userInitiated).async {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: binary)
+            task.arguments = args
+            task.standardOutput = FileHandle.nullDevice
+            task.standardError = FileHandle.nullDevice
+            
+            do {
+                try task.run()
+                print("[BayMacDPI] ✅ Started ciadpi with PID: \(task.processIdentifier)")
+                
+                DispatchQueue.main.async {
+                    self.waitForStatus(target: true)
+                    if self.systemProxyEnabled {
+                        print("[BayMacDPI] 🌐 Enabling System Proxy on port \(port)...")
+                        self.enableSystemProxy(port: port)
+                    }
+                }
+            } catch {
+                print("[BayMacDPI] ❌ Failed to start: \(error)")
+                DispatchQueue.main.async {
+                    self.statusMessage = L("common.error")
+                    self.isProcessing = false
                 }
             }
         }
@@ -145,14 +400,44 @@ class ServiceManager: ObservableObject {
         isProcessing = true
         statusMessage = L("dashboard.stopping")
         
-        runCommand("/bin/launchctl", args: ["unload", plistPath])
-        // Force cleanup just in case
-        runCommand("/usr/bin/killall", args: ["ciadpi"])
+        print("[BayMacDPI] 🛑 Stopping ByeDPI Service...")
         
-        disableSystemProxy()
-        
-        DispatchQueue.global().async {
-            self.waitForStatus(target: false)
+        DispatchQueue.global(qos: .userInitiated).async {
+            // 1. Unload from launchd (in case it was loaded previously)
+            // Even though we use direct process now, checking ensure no zombie service remains
+            let launchctlTask = Process()
+            launchctlTask.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            launchctlTask.arguments = ["unload", self.plistPath]
+            launchctlTask.standardOutput = FileHandle.nullDevice
+            launchctlTask.standardError = FileHandle.nullDevice
+            try? launchctlTask.run()
+            launchctlTask.waitUntilExit()
+            
+            // 2. Kill ciadpi directly (SIGKILL -9)
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killTask.arguments = ["-9", "ciadpi"]
+            killTask.standardOutput = FileHandle.nullDevice
+            killTask.standardError = FileHandle.nullDevice
+            try? killTask.run()
+            killTask.waitUntilExit()
+            
+            // 3. Fallback with pkill (SIGKILL -9)
+            let pkillTask = Process()
+            pkillTask.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            pkillTask.arguments = ["-9", "-f", "ciadpi"]
+            pkillTask.standardOutput = FileHandle.nullDevice
+            pkillTask.standardError = FileHandle.nullDevice
+            try? pkillTask.run()
+            pkillTask.waitUntilExit()
+            
+            print("[BayMacDPI] ✅ ByeDPI Service stopped")
+            
+            DispatchQueue.main.async {
+                print("[BayMacDPI] 🌐 Disabling System Proxy...")
+                self.disableSystemProxy()
+                self.waitForStatus(target: false)
+            }
         }
     }
     
@@ -167,6 +452,8 @@ class ServiceManager: ObservableObject {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
         process.arguments = ["-x", "ciadpi"]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
         
         try? process.run()
         process.waitUntilExit()
@@ -223,23 +510,72 @@ class ServiceManager: ObservableObject {
     
     private func createPlist() {
         let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
-        let splitMode = UserDefaults.standard.string(forKey: "splitMode") ?? "1+s"
+        let activePreset = UserDefaults.standard.string(forKey: "activePreset") ?? "standard"
+        let customArgs = UserDefaults.standard.string(forKey: "customByedpiArgs") ?? ""
+        
+        // Advanced parameters
+        let ttlValue = UserDefaults.standard.string(forKey: "ttlValue") ?? "8"
+        let timeoutValue = UserDefaults.standard.string(forKey: "connectionTimeout") ?? "5"
+        let maxConnValue = UserDefaults.standard.string(forKey: "maxConnections") ?? "512"
+        let cacheTTL = UserDefaults.standard.string(forKey: "cacheTTL") ?? "100800"
+        let autoMode = UserDefaults.standard.string(forKey: "autoMode") ?? "1"
+        let useTFO = UserDefaults.standard.bool(forKey: "useTFO")
+        let noUDP = UserDefaults.standard.bool(forKey: "noUDP")
+        let defTTL = UserDefaults.standard.string(forKey: "defTTL") ?? ""
         
         let logPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("BayMacDPI/byedpi.log").path
         
-        // Construct arguments based on mode
+        // Start with base arguments
         var args = [byedpiPath, "-i", "127.0.0.1", "-p", port]
         
-        switch splitMode {
-        case "1+s":
-            args += ["-r", "1+s"]
-        case "2+s":
-            args += ["-r", "2+s"]
-        case "fake":
-            args += ["-d", "1"] // Map 'fake' to disorder 1 to prevent crash
-        default:
-            args += ["-r", "1+s"]
+        // Add advanced parameters
+        args += ["-c", maxConnValue]
+        args += ["-u", cacheTTL]
+        args += ["-L", autoMode]
+        
+        if !defTTL.isEmpty {
+            args += ["-g", defTTL]
+        }
+        
+        if useTFO {
+            args += ["-F"]
+        }
+        
+        if noUDP {
+            args += ["-U"]
+        }
+        
+        // Apply preset arguments
+        if activePreset == "custom" && !customArgs.isEmpty {
+            // Custom mode - use user-defined args
+            let customArgsParsed = customArgs.split(separator: " ").map(String.init)
+            args += customArgsParsed
+        } else if let preset = PresetManager.preset(for: activePreset) {
+            // Use preset args
+            args += preset.args
+            
+            // Override TTL if fake mode is used
+            if preset.args.contains("--fake") || preset.args.contains("-f") {
+                if let ttlIndex = args.firstIndex(of: "--ttl") {
+                    // Already has TTL, use custom value if different
+                    if ttlIndex + 1 < args.count {
+                        args[ttlIndex + 1] = ttlValue
+                    }
+                } else if let ttlIndex = args.firstIndex(of: "-t") {
+                    if ttlIndex + 1 < args.count {
+                        args[ttlIndex + 1] = ttlValue
+                    }
+                }
+            }
+            
+            // Override timeout
+            if preset.args.contains("--auto") || preset.args.contains("-A") {
+                // Auto mode might need adjustments but standard args should be fine
+            }
+        } else {
+            // Fallback to standard
+            args += ["--split", "1+s"]
         }
         
         // Create XML Array for arguments
@@ -282,18 +618,22 @@ class ServiceManager: ObservableObject {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: launchPath)
             process.arguments = args
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
             try? process.run()
             process.waitUntilExit()
         }
     }
     
     func enableSystemProxy(port: String) {
+        DispatchQueue.main.async { self.statusMessage = "Enabling System Proxy..." }
         let service = "Wi-Fi"
         runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxy", service, "127.0.0.1", port])
         runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", service, "on"])
     }
     
     func disableSystemProxy() {
+        DispatchQueue.main.async { self.statusMessage = "Disabling System Proxy..." }
         runCommand("/usr/sbin/networksetup", args: ["-setsocksfirewallproxystate", "Wi-Fi", "off"])
     }
     

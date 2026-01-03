@@ -104,6 +104,7 @@ struct DashboardView: View {
                             }
                             .pickerStyle(MenuPickerStyle())
                             .labelsHidden()
+                            .onChange(of: proxyType) { _ in if service.isRunning { service.restartService() } }
                         }
                         
                         Divider().frame(height: 40)
@@ -113,7 +114,9 @@ struct DashboardView: View {
                                 .textFieldStyle(PlainTextFieldStyle())
                                 .frame(width: 50)
                                 .multilineTextAlignment(.center)
+                                .multilineTextAlignment(.center)
                                 .foregroundColor(textColor)
+                                .onSubmit { if service.isRunning { service.restartService() } }
                         }
                         
                         Divider().frame(height: 40)
@@ -126,6 +129,7 @@ struct DashboardView: View {
                             }
                             .pickerStyle(MenuPickerStyle())
                             .labelsHidden()
+                            .onChange(of: splitMode) { _ in if service.isRunning { service.restartService() } }
                         }
                         
                         Divider().frame(height: 40)
@@ -146,25 +150,41 @@ struct DashboardView: View {
                 }
                 .background(cardBg)
                 .cornerRadius(16)
-                
-                // Presets
+                // Presets Grid
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(L("dashboard.presets"))
-                        .font(.headline)
-                        .foregroundColor(.gray)
+                    HStack {
+                        Text(L("dashboard.presets"))
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("\(PresetManager.presets.count) " + L("dashboard.modes"))
+                            .font(.caption)
+                            .foregroundColor(.gray.opacity(0.7))
+                    }
                     
-                    HStack(spacing: 10) {
-                        CompactPreset(name: L("preset.standard"), icon: "shield", isActive: activePreset == "standard", textColor: textColor) {
-                            activePreset = "standard"; proxyType = "socks5"; splitMode = "1+s"
-                        }
-                        CompactPreset(name: L("preset.game"), icon: "gamecontroller", isActive: activePreset == "gaming", textColor: textColor) {
-                            activePreset = "gaming"; proxyType = "socks5"; splitMode = "fake"
-                        }
-                        CompactPreset(name: L("preset.streaming"), icon: "play.tv", isActive: activePreset == "streaming", textColor: textColor) {
-                            activePreset = "streaming"; proxyType = "http"; splitMode = "2+s"
-                        }
-                        CompactPreset(name: L("preset.privacy"), icon: "eye.slash", isActive: activePreset == "privacy", textColor: textColor) {
-                            activePreset = "privacy"; proxyType = "https"; splitMode = "1+s"
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10),
+                        GridItem(.flexible(), spacing: 10)
+                    ], spacing: 10) {
+                        ForEach(PresetManager.presets) { preset in
+                            PresetCard(
+                                preset: preset,
+                                isActive: activePreset == preset.id,
+                                textColor: textColor,
+                                cardBg: cardBg
+                            ) {
+                                withAnimation(.spring(response: 0.3)) {
+                                    activePreset = preset.id
+                                    proxyType = preset.proxyType
+                                    print("[BayMacDPI] 🔄 Preset Changed: \(preset.id)")
+                                    
+                                    if service.isRunning {
+                                        service.restartService()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -275,5 +295,57 @@ struct CompactPreset: View {
             .cornerRadius(10)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Preset Card for Grid
+struct PresetCard: View {
+    let preset: BypassPreset
+    let isActive: Bool
+    let textColor: Color
+    let cardBg: Color
+    let action: () -> Void
+    
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(isActive ? Color.blue : Color.gray.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: preset.icon)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(isActive ? .white : textColor.opacity(0.7))
+                }
+                
+                Text(preset.localizedName)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(isActive ? .blue : textColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isActive ? Color.blue.opacity(0.15) : (isHovered ? cardBg.opacity(1.2) : cardBg))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isActive ? Color.blue : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isHovered ? 1.02 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
+        .help(preset.localizedDescription)
     }
 }

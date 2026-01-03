@@ -5,13 +5,22 @@ struct ProtocolsView: View {
     @AppStorage("proxyType") var proxyType: String = "socks5"
     @AppStorage("byedpiPort") var byedpiPort: String = "1080"
     @AppStorage("systemProxyEnabled") var systemProxyEnabled: Bool = false
-    @AppStorage("connectionTimeout") var connectionTimeout: String = "30"
-    @AppStorage("maxConnections") var maxConnections: String = "100"
-    @AppStorage("byedpiArgs") var byedpiArgs: String = "-r 1+s"
+    @AppStorage("connectionTimeout") var connectionTimeout: String = "5"
+    @AppStorage("maxConnections") var maxConnections: String = "512"
+    @AppStorage("byedpiArgs") var byedpiArgs: String = ""
+    @AppStorage("customByedpiArgs") var customByedpiArgs: String = ""
     @AppStorage("dohProvider") var dohProvider: String = "none"
     @AppStorage("splitMode") var splitMode: String = "1+s"
-    @AppStorage("ttlValue") var ttlValue: String = "4"
+    @AppStorage("ttlValue") var ttlValue: String = "8"
     @AppStorage("appTheme") var appTheme: String = "dark"
+    @AppStorage("activePreset") var activePreset: String = "standard"
+    
+    // Advanced Parameters
+    @AppStorage("cacheTTL") var cacheTTL: String = "100800"
+    @AppStorage("autoMode") var autoMode: String = "1"
+    @AppStorage("useTFO") var useTFO: Bool = false
+    @AppStorage("noUDP") var noUDP: Bool = false
+    @AppStorage("defTTL") var defTTL: String = ""
     
     var textColor: Color { appTheme == "light" ? .black : .white }
     var cardBg: Color { appTheme == "light" ? Color(white: 0.90) : Color(white: 0.12) }
@@ -51,18 +60,21 @@ struct ProtocolsView: View {
                             TextField("1080", text: $byedpiPort)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
+                                .onSubmit { restartIfRunning() }
                         }
                         Divider()
                         SettingRow(label: L("protocols.timeout"), textColor: textColor) {
                             TextField("30", text: $connectionTimeout)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
+                                .onSubmit { restartIfRunning() }
                         }
                         Divider()
                         SettingRow(label: L("protocols.max_conn"), textColor: textColor) {
                             TextField("100", text: $maxConnections)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
+                                .onSubmit { restartIfRunning() }
                         }
                         Divider()
                         SettingRow(label: L("dashboard.config.system_proxy"), textColor: textColor) {
@@ -77,42 +89,108 @@ struct ProtocolsView: View {
                     }
                 }
                 
-                // DPI Bypass
+                // DPI Bypass & Advanced Settings
                 SettingCard(title: L("protocols.dpi_bypass"), icon: "shield.lefthalf.filled", cardBg: cardBg, textColor: textColor) {
                     VStack(alignment: .leading, spacing: 15) {
-                        Text(L("protocols.split_mode"))
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        HStack(spacing: 10) {
-                            ForEach(["1+s", "2+s", "3+s", "fake"], id: \.self) { mode in
-                                Button(action: { splitMode = mode }) {
-                                    Text(mode)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 8)
-                                        .background(splitMode == mode ? Color.purple : Color.gray.opacity(0.2))
-                                        .foregroundColor(splitMode == mode ? .white : textColor)
-                                        .cornerRadius(8)
+                        // Active Preset Display
+                        HStack {
+                            Text(L("dashboard.presets"))
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            Spacer()
+                            if let preset = PresetManager.preset(for: activePreset) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: preset.icon)
+                                        .font(.system(size: 12))
+                                    Text(preset.localizedName)
+                                        .font(.system(size: 12, weight: .medium))
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.blue.opacity(0.2))
+                                .foregroundColor(.blue)
+                                .cornerRadius(6)
                             }
                         }
                         
                         Divider()
                         
+                        // TTL Settings
                         SettingRow(label: L("protocols.ttl"), textColor: textColor) {
-                            TextField("4", text: $ttlValue)
+                            TextField("8", text: $ttlValue)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 60)
+                                .onSubmit { restartIfRunning() }
                         }
                         
                         Divider()
                         
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(L("protocols.custom_args"))
-                                .foregroundColor(textColor)
-                            TextField("-r 1+s", text: $byedpiArgs)
+                        // Timeout
+                        SettingRow(label: L("protocols.timeout"), textColor: textColor) {
+                            TextField("5", text: $connectionTimeout)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 60)
+                                .onSubmit { restartIfRunning() }
+                        }
+                        
+                        Divider()
+                        
+                        // Cache TTL
+                        SettingRow(label: "Cache TTL (s)", textColor: textColor) {
+                            TextField("100800", text: $cacheTTL)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                                .onSubmit { restartIfRunning() }
+                        }
+                        
+                        Divider()
+                        
+                        // Auto Mode
+                        SettingRow(label: "Auto Mode", textColor: textColor) {
+                            Picker("", selection: $autoMode) {
+                                Text("0").tag("0")
+                                Text("1").tag("1")
+                                Text("2").tag("2")
+                                Text("3").tag("3")
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .frame(width: 150)
+                        }
+                        
+                        Divider()
+                        
+                        // Toggles Row
+                        HStack(spacing: 30) {
+                            Toggle("TCP Fast Open", isOn: $useTFO)
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                            
+                            Toggle("No UDP", isOn: $noUDP)
+                                .toggleStyle(SwitchToggleStyle(tint: .orange))
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(textColor)
+                        
+                        Divider()
+                        
+                        // Default TTL (optional)
+                        SettingRow(label: "Default TTL", textColor: textColor) {
+                            TextField("(auto)", text: $defTTL)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 70)
+                                .onSubmit { restartIfRunning() }
+                        }
+                        
+                        // Custom Args (only for custom preset)
+                        if activePreset == "custom" {
+                            Divider()
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(L("protocols.custom_args"))
+                                    .foregroundColor(textColor)
+                                TextField("--split 1+s --disorder 1", text: $customByedpiArgs)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .onSubmit { restartIfRunning() }
+                            }
                         }
                     }
                 }
@@ -130,6 +208,19 @@ struct ProtocolsView: View {
             .padding(30)
         }
         .background(bgColor)
+        // Reactive Logic
+        .onChange(of: proxyType) { _ in restartIfRunning() }
+        .onChange(of: dohProvider) { _ in restartIfRunning() }
+        .onChange(of: splitMode) { _ in restartIfRunning() } // If splitMode changed externally
+        .onChange(of: autoMode) { _ in restartIfRunning() }
+        .onChange(of: useTFO) { _ in restartIfRunning() }
+        .onChange(of: noUDP) { _ in restartIfRunning() }
+    }
+    
+    private func restartIfRunning() {
+        if service.isRunning {
+             service.restartService()
+        }
     }
 }
 

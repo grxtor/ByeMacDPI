@@ -20,6 +20,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+
+
+# Copy AppIcon.icns
+if [ -f "$SRC_DIR/AppIcon.icns" ]; then
+    echo "Copying AppIcon.icns..."
+    cp "$SRC_DIR/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns"
+fi
+
 # Info.plist
 echo "Creating Info.plist..."
 cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
@@ -52,14 +60,24 @@ EOF
 # PkgInfo
 echo "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
-# Copy bundled ByeDPI binary from Resources
-BYEDPI_SRC="Resources/ciadpi"
-if [ -f "$BYEDPI_SRC" ]; then
+# Copy bundled ByeDPI binary - check multiple locations
+BYEDPI_SRC=""
+if [ -f "../byedpi/ciadpi" ]; then
+    BYEDPI_SRC="../byedpi/ciadpi"
+    echo "Found ciadpi in ../byedpi/"
+elif [ -f "Resources/ciadpi" ]; then
+    BYEDPI_SRC="Resources/ciadpi"
+    echo "Found ciadpi in Resources/"
+fi
+
+if [ -n "$BYEDPI_SRC" ]; then
     echo "Copying ByeDPI binary..."
     cp "$BYEDPI_SRC" "$RESOURCES_DIR/ciadpi"
     chmod +x "$RESOURCES_DIR/ciadpi"
+    # Remove quarantine attribute
+    xattr -d com.apple.quarantine "$RESOURCES_DIR/ciadpi" 2>/dev/null || true
 else
-    echo "ERROR: ciadpi binary not found in Resources/"
+    echo "ERROR: ciadpi binary not found!"
     exit 1
 fi
 

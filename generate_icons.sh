@@ -1,0 +1,15 @@
+#!/bin/bash
+LOGO="/Users/abdullah/Desktop/Projeler/VencordBypass/logo.png"
+OUT_DIR="/Users/abdullah/Desktop/Projeler/VencordBypass/ByeDPI_Native/Sources/AppIcon.iconset"
+mkdir -p "$OUT_DIR"
+
+sips -z 16 16     "$LOGO" --out "$OUT_DIR/icon_16x16.png"
+sips -z 32 32     "$LOGO" --out "$OUT_DIR/icon_16x16@2x.png"
+sips -z 32 32     "$LOGO" --out "$OUT_DIR/icon_32x32.png"
+sips -z 64 64     "$LOGO" --out "$OUT_DIR/icon_32x32@2x.png"
+sips -z 128 128   "$LOGO" --out "$OUT_DIR/icon_128x128.png"
+sips -z 256 256   "$LOGO" --out "$OUT_DIR/icon_128x128@2x.png"
+sips -z 256 256   "$LOGO" --out "$OUT_DIR/icon_256x256.png"
+sips -z 512 512   "$LOGO" --out "$OUT_DIR/icon_256x256@2x.png"
+sips -z 512 512   "$LOGO" --out "$OUT_DIR/icon_512x512.png"
+sips -z 1024 1024 "$LOGO" --out "$OUT_DIR/icon_512x512@2x.png"
