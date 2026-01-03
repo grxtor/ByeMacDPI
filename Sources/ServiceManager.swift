@@ -122,7 +122,7 @@ class ServiceManager: ObservableObject {
         _ = byedpiPath
         
         isProcessing = true
-        statusMessage = L("onboarding.checking")
+        statusMessage = L("dashboard.starting")
         
         createPlist()
         runCommand("/bin/launchctl", args: ["load", plistPath])
@@ -140,7 +140,7 @@ class ServiceManager: ObservableObject {
     
     func stopService() {
         isProcessing = true
-        statusMessage = L("onboarding.checking")
+        statusMessage = L("dashboard.stopping")
         
         runCommand("/bin/launchctl", args: ["unload", plistPath])
         disableSystemProxy()
