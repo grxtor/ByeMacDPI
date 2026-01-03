@@ -127,11 +127,13 @@ class ServiceManager: ObservableObject {
         createPlist()
         runCommand("/bin/launchctl", args: ["load", plistPath])
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.checkStatus()
-            if self.systemProxyEnabled {
-                let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
-                self.enableSystemProxy(port: port)
+        DispatchQueue.global().async {
+            self.waitForStatus(target: true)
+            DispatchQueue.main.async {
+                if self.systemProxyEnabled {
+                    let port = UserDefaults.standard.string(forKey: "byedpiPort") ?? "1080"
+                    self.enableSystemProxy(port: port)
+                }
             }
         }
     }
@@ -143,8 +145,36 @@ class ServiceManager: ObservableObject {
         runCommand("/bin/launchctl", args: ["unload", plistPath])
         disableSystemProxy()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.checkStatus()
+        DispatchQueue.global().async {
+            self.waitForStatus(target: false)
+        }
+    }
+    
+    private func waitForStatus(target: Bool, attempts: Int = 0) {
+        if attempts > 10 { // Max 5 seconds (10 * 0.5s)
+            DispatchQueue.main.async {
+                self.checkStatus() // Final check
+            }
+            return
+        }
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        process.arguments = ["-x", "ciadpi"]
+        
+        try? process.run()
+        process.waitUntilExit()
+        
+        let isRunning = (process.terminationStatus == 0)
+        
+        if isRunning == target {
+            DispatchQueue.main.async {
+                self.checkStatus() // Will update UI and stop animation
+            }
+        } else {
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) {
+                self.waitForStatus(target: target, attempts: attempts + 1)
+            }
         }
     }
     
@@ -202,8 +232,12 @@ class ServiceManager: ObservableObject {
             <key>ProgramArguments</key>
             <array>
                 <string>\(byedpiPath)</string>
+                <string>-i</string>
+                <string>127.0.0.1</string>
+                <string>-p</string>
+                <string>\(port)</string>
                 <string>-r</string>
-                <string>1+s</string>
+                <string>\(splitMode)</string>
             </array>
             <key>RunAtLoad</key>
             <true/>
