@@ -222,6 +222,23 @@ class ServiceManager: ObservableObject {
         let logPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("BayMacDPI/byedpi.log").path
         
+        // Construct arguments based on mode
+        var args = [byedpiPath, "-i", "127.0.0.1", "-p", port]
+        
+        switch splitMode {
+        case "1+s":
+            args += ["-r", "1+s"]
+        case "2+s":
+            args += ["-r", "2+s"]
+        case "fake":
+            args += ["-d", "1"] // Map 'fake' to disorder 1 to prevent crash
+        default:
+            args += ["-r", "1+s"]
+        }
+        
+        // Create XML Array for arguments
+        let argsString = args.map { "<string>\($0)</string>" }.joined(separator: "\n        ")
+        
         let content = """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -231,13 +248,7 @@ class ServiceManager: ObservableObject {
             <string>com.baymacdpi.ciadpi</string>
             <key>ProgramArguments</key>
             <array>
-                <string>\(byedpiPath)</string>
-                <string>-i</string>
-                <string>127.0.0.1</string>
-                <string>-p</string>
-                <string>\(port)</string>
-                <string>-r</string>
-                <string>\(splitMode)</string>
+                \(argsString)
             </array>
             <key>RunAtLoad</key>
             <true/>
