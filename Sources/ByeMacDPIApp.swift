@@ -4,67 +4,77 @@ import AppKit
 @main
 struct ByeMacDPIApp: App {
     @StateObject private var service = ServiceManager.shared
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @State private var showOnboarding = false
+    @StateObject private var dependencyManager = DependencyManager.shared
+    @StateObject private var dnsManager = DNSProxyManager.shared
+    
+    @AppStorage("setupCompleted") private var setupCompleted = false
     
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                MainLayout()
-                    .environmentObject(service)
-                    .frame(minWidth: 900, minHeight: 650)
-                
-                // Show onboarding overlay on first run
-                if showOnboarding {
-                    Color.black.opacity(0.8)
-                        .ignoresSafeArea()
-                    
-                    OnboardingView(service: service, isComplete: $hasCompletedOnboarding)
-                        .cornerRadius(16)
-                        .shadow(radius: 20)
+            Group {
+                if !setupCompleted || !dependencyManager.allRequiredInstalled() {
+                    // Show setup wizard if not completed or dependencies missing
+                    SetupWizardView()
+                        .frame(minWidth: 600, minHeight: 500)
+                } else {
+                    // Main app with tab navigation
+                    TabNavigationView()
+                        .frame(minWidth: 800, minHeight: 600)
                 }
             }
             .onAppear {
-                if !hasCompletedOnboarding {
-                    showOnboarding = true
-                }
-            }
-            .onChange(of: hasCompletedOnboarding) { newValue in
-                if newValue {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showOnboarding = false
-                    }
-                } else {
-                    withAnimation(.easeIn(duration: 0.3)) {
-                        showOnboarding = true
-                    }
+                // Check for updates in background
+                Task {
+                    await dependencyManager.checkForUpdates()
                 }
             }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         
-        MenuBarExtra("ByeMacDPI", systemImage: service.isRunning ? "bolt.fill" : "bolt.slash.fill") {
+        MenuBarExtra("ByeMacDPI", systemImage: service.isRunning ? "shield.checkered" : "shield.slash") {
             VStack {
-                Text("ByeMacDPI")
-                    .font(.headline)
+                HStack {
+                    Circle()
+                        .fill(service.isRunning ? Color.green : Color.red)
+                        .frame(width: 8, height: 8)
+                    Text("ByeMacDPI")
+                        .font(.headline)
+                }
+                
                 Divider()
-                Button(service.isRunning ? "Durdur" : "Başlat") {
+                
+                Button(service.isRunning ? "🛑 Durdur" : "▶️ Başlat") {
                     service.toggleService()
                 }
-                Button("Discord Başlat") {
-                    service.launchDiscord()
+                
+                if dnsManager.isRunning {
+                    Button("🌐 DNS Proxy Durdur") {
+                        Task { await dnsManager.stopDNSProxy() }
+                    }
                 }
+                
                 Divider()
-                Button("Uygulamayı Göster") {
+                
+                Button("💬 Discord Başlat") {
+                    if !service.isRunning { service.startService() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        service.launchDiscord()
+                    }
+                }
+                
+                Divider()
+                
+                Button("📱 Uygulamayı Göster") {
                     NSApp.activate(ignoringOtherApps: true)
                     if let window = NSApp.windows.first {
                         window.makeKeyAndOrderFront(nil)
                     }
                 }
-                Button("Çıkış") {
+                
+                Button("🚪 Çıkış") {
                     NSApplication.shared.terminate(nil)
                 }
             }
@@ -83,14 +93,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 1. Disable System Proxy (Synchronous)
         ServiceManager.shared.disableSystemProxy()
         
-        // 2. Kill Service Forcefully (Synchronous)
-        let kill = Process()
-        kill.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-        kill.arguments = ["-9", "ciadpi"]
-        // Silent
-        kill.standardOutput = FileHandle.nullDevice
-        kill.standardError = FileHandle.nullDevice
-        try? kill.run()
-        kill.waitUntilExit()
+        // 2. Kill all binary engines forcefully
+        let binaries = ["ciadpi", "cloudflared", "spoof-dpi"]
+        for binary in binaries {
+            let killTask = Process()
+            killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killTask.arguments = ["-9", binary]
+            killTask.standardOutput = FileHandle.nullDevice
+            killTask.standardError = FileHandle.nullDevice
+            try? killTask.run()
+            killTask.waitUntilExit()
+        }
     }
 }

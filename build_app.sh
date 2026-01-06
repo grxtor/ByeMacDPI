@@ -44,15 +44,15 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.0.9</string>
+    <string>2.0.0</string>
     <key>CFBundleVersion</key>
-    <string>11</string>
+    <string>20</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2024 ByeMacDPI. Licensed under MIT.</string>
+    <string>Copyright © 2026 ByeMacDPI. Licensed under GPL v3.</string>
 </dict>
 </plist>
 EOF
@@ -60,26 +60,8 @@ EOF
 # PkgInfo
 echo "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
-# Copy bundled ByeDPI binary - check multiple locations
-BYEDPI_SRC=""
-if [ -f "../byedpi/ciadpi" ]; then
-    BYEDPI_SRC="../byedpi/ciadpi"
-    echo "Found ciadpi in ../byedpi/"
-elif [ -f "Resources/ciadpi" ]; then
-    BYEDPI_SRC="Resources/ciadpi"
-    echo "Found ciadpi in Resources/"
-fi
-
-if [ -n "$BYEDPI_SRC" ]; then
-    echo "Copying ByeDPI binary..."
-    cp "$BYEDPI_SRC" "$RESOURCES_DIR/ciadpi"
-    chmod +x "$RESOURCES_DIR/ciadpi"
-    # Remove quarantine attribute
-    xattr -d com.apple.quarantine "$RESOURCES_DIR/ciadpi" 2>/dev/null || true
-else
-    echo "ERROR: ciadpi binary not found!"
-    exit 1
-fi
+# ciadpi is now downloaded at runtime by DependencyManager
+echo "Skipping ciadpi bundling (downloaded at runtime)"
 
 # Clean up metadata before signing to prevent "resource fork" errors
 echo "Cleaning metadata..."

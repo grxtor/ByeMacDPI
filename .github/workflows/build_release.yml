@@ -26,12 +26,9 @@ jobs:
         run: |
           # Remove all extended attributes that can block execution
           xattr -cr Build/ByeMacDPI.app
-          # Ensure binary is executable
+          # Ensure main binary is executable
           chmod +x Build/ByeMacDPI.app/Contents/MacOS/ByeMacDPI
-          chmod +x Build/ByeMacDPI.app/Contents/Resources/ciadpi
-          # Sign the ciadpi binary separately (ad-hoc)
-          codesign --force --deep --sign - Build/ByeMacDPI.app/Contents/Resources/ciadpi
-          # Re-sign the entire app after modifying contents
+          # Sign the entire app (ad-hoc)
           codesign --force --deep --sign - Build/ByeMacDPI.app
 
       - name: Package App as ZIP

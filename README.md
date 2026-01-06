@@ -4,7 +4,7 @@
 
 ![ByeMacDPI Logo](Screenshots/ByeMacDPI.png)
 
-**macOS için DPI Bypass Aracı** | **DPI Bypass Tool for macOS**
+**macOS için DPI Bypass & Şifreli DNS Aracı** | **DPI Bypass & Encrypted DNS Tool for macOS**
 
 [![macOS](https://img.shields.io/badge/macOS-13.0+-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9-FA7343?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org/)
@@ -18,22 +18,21 @@
 
 ## English
 
-### What is ByeMacDPI?
+### What is ByeMacDPI v2.0?
 
-ByeMacDPI is a native macOS application that helps bypass Deep Packet Inspection (DPI) restrictions. It provides a beautiful, modern interface to manage the [ByeDPI](https://github.com/hufrea/byedpi) proxy service on your Mac.
+ByeMacDPI is a native macOS application that helps bypass Deep Packet Inspection (DPI) restrictions and secure your DNS queries. It provides a beautiful, SplitWire-inspired interface to manage DPI bypass and DNS-over-HTTPS (DoH).
 
 ### Features
 
 | Feature | Description |
 |---------|-------------|
-| 🚀 **One-Click Start** | Start/stop the DPI bypass service instantly |
-| 📱 **App Launcher** | Launch apps (Discord, etc.) through the proxy |
+| 🚀 **Tabbed Interface** | Modern SplitWire-style tabbed navigation |
+| 🛡️ **DPI Bypass** | Split, Disorder, and Fake packet techniques |
+| 🌐 **DNS-over-HTTPS** | Secure DNS queries using `cloudflared` |
+| ⚡ **Quick Launch** | Launch Discord and other apps through proxy |
+| 🔄 **Auto-Install** | Automatically downloads latest binaries from GitHub |
 | ⚙️ **Custom Profiles** | Standard, Gaming, Streaming, Privacy presets |
-| 🌐 **DNS Tools** | Test DNS servers with latency checks |
-| � **Localization** | Support for English and Turkish (System Auto) |
-| 🏗️ **Multi-Engine** | Architecture ready for multiple bypass engines |
-| 📂 **Custom Binary** | Use your own DPI bypass binary/path |
-| 🔄 **Auto-Install** | Binary auto-downloads on first run |
+| 🌍 **Localization** | Support for English and Turkish |
 
 ### Screenshots
 
@@ -68,22 +67,21 @@ open "Build/ByeMacDPI.app"
 
 ## Türkçe
 
-### ByeMacDPI Nedir?
+### ByeMacDPI v2.0 Nedir?
 
-ByeMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımcı olan native bir macOS uygulamasıdır. Mac'inizde [ByeDPI](https://github.com/hufrea/byedpi) proxy servisini yönetmek için güzel ve modern bir arayüz sunar.
+ByeMacDPI, Deep Packet Inspection (DPI) kısıtlamalarını aşmanıza yardımcı olan ve DNS sorgularınızı güvene alan native bir macOS uygulamasıdır. DPI bypass ve DNS-over-HTTPS (DoH) yönetimi için SplitWire'dan esinlenen modern bir arayüz sunar.
 
 ### Özellikler
 
 | Özellik | Açıklama |
 |---------|----------|
-| 🚀 **Tek Tıkla Başlat** | DPI bypass servisini anında başlat/durdur |
-| 📱 **Uygulama Başlatıcı** | Uygulamaları (Discord, vb.) proxy üzerinden başlat |
+| 🚀 **Tab Navigasyonu** | Modern SplitWire tarzı üst sekme navigasyonu |
+| 🛡️ **DPI Bypass** | Split, Disorder ve Fake paket teknikleri |
+| 🌐 **Şifreli DNS** | `cloudflared` ile DNS-over-HTTPS (DoH) desteği |
+| ⚡ **Hızlı Başlatıcı** | Discord ve diğer uygulamaları proxy ile başlat |
+| 🔄 **Otomatik Kurulum** | Gerekli dosyaları GitHub'dan otomatik indirir |
 | ⚙️ **Özel Profiller** | Standart, Oyun, Streaming, Gizlilik profilleri |
-| 🌐 **DNS Araçları** | DNS sunucularını gecikme testleriyle kontrol et |
-| � **Yerelleştirme** | Türkçe ve İngilizce dil desteği (Otomatik) |
-| 🏗️ **Çoklu Motor** | Farklı bypass motorları için hazır altyapı |
-| 📂 **Özel Dosya** | Kendi DPI binary dosyanı seçebilme |
-| 🔄 **Otomatik Kurulum** | İlk çalıştırmada binary otomatik indirilir |
+| 🌍 **Yerelleştirme** | Türkçe ve İngilizce dil desteği |
 
 ### Kurulum
 
@@ -113,7 +111,8 @@ open "Build/ByeMacDPI.app"
 
 1. **ByeMacDPI** starts a local SOCKS5 proxy (default: `127.0.0.1:1080`)
 2. The proxy uses DPI bypass techniques (packet splitting, TTL manipulation)
-3. Apps connect through this proxy to bypass restrictions
+3. **Encrypted DNS** (DoH) routes DNS queries through a secure tunnel
+4. Apps connect through this setup to bypass restrictions securely
 
 ---
 
