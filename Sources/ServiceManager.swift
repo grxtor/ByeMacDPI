@@ -3,32 +3,85 @@ import Combine
 import AppKit
 import SwiftUI
 
-// MARK: - Bypass Preset Model
-struct BypassPreset: Identifiable, Codable, Hashable {
-    let id: String
-    let name: String
-    let localizedNameKey: String
-    let icon: String
-    let descriptionKey: String
-    let args: String // Changed to String for simpler engine mapping
-    
-    var localizedName: String { L(localizedNameKey) }
-    var localizedDescription: String { L(descriptionKey) }
+// 1. Preset Türlerini Tanımlayan Enum
+enum BypassStrategy: String, CaseIterable, Identifiable, Codable {
+    case standard
+    case gaming
+    case streaming
+    case privacy
+    case discord
+    case stealth
+    case oob
+    case light
+    case custom
+
+    var id: String { rawValue }
+
+    // SF Symbol İkonları
+    var iconName: String {
+        switch self {
+        case .standard:  return "shield.checkerboard"
+        case .gaming:    return "gamecontroller.fill"
+        case .streaming: return "play.tv.fill"
+        case .privacy:   return "hand.raised.fill"
+        case .discord:   return "bubble.left.and.bubble.right.fill"
+        case .stealth:   return "eye.slash.fill"
+        case .oob:       return "network.badge.shield.half.filled"
+        case .light:     return "leaf.fill"
+        case .custom:    return "slider.horizontal.3"
+        }
+    }
+
+    // CLI Argümanları
+    var arguments: String {
+        switch self {
+        case .standard:  return "--split 1+s"
+        case .gaming:    return "--disorder 1 --split 1+s"
+        case .streaming: return "--split 2+s --auto=torst"
+        case .privacy:   return "--split 1+s --tlsrec 3+s"
+        case .discord:   return "--disorder 1 --split 1+s --auto=torst"
+        case .stealth:   return "--tlsrec 1+s --auto=torst"
+        case .oob:       return "--oob 3+s --split 1"
+        case .light:     return "--split 1"
+        case .custom:    return ""
+        }
+    }
+
+    // Localization Anahtarları
+    var titleKey: String { 
+        switch self {
+        case .gaming: return "preset.game" // Keep original key for gaming
+        default: return "preset.\(rawValue)"
+        }
+    }
+    var descriptionKey: String { "preset.\(rawValue).desc" }
 }
 
-// MARK: - Preset Definitions
+// 2. Kullanılacak Model
+struct BypassPreset: Identifiable, Codable, Hashable {
+    let id: String
+    let strategy: BypassStrategy
+    let nameKey: String
+    let descKey: String
+    let icon: String
+    let args: String
+    
+    var localizedName: String { L(nameKey) }
+    var localizedDescription: String { L(descKey) }
+
+    init(strategy: BypassStrategy) {
+        self.id = strategy.id
+        self.strategy = strategy
+        self.nameKey = strategy.titleKey
+        self.descKey = strategy.descriptionKey
+        self.icon = strategy.iconName
+        self.args = strategy.arguments
+    }
+}
+
+// 3. Manager
 struct PresetManager {
-    static let presets: [BypassPreset] = [
-        BypassPreset(id: "standard", name: "Standard", localizedNameKey: "preset.standard", icon: "shield", descriptionKey: "preset.standard.desc", args: "--split 1+s"),
-        BypassPreset(id: "gaming", name: "Gaming", localizedNameKey: "preset.game", icon: "gamecontroller", descriptionKey: "preset.gaming.desc", args: "--disorder 1 --split 1+s"),
-        BypassPreset(id: "streaming", name: "Streaming", localizedNameKey: "preset.streaming", icon: "play.tv", descriptionKey: "preset.streaming.desc", args: "--split 2+s --auto=torst"),
-        BypassPreset(id: "privacy", name: "Privacy", localizedNameKey: "preset.privacy", icon: "eye.slash", descriptionKey: "preset.privacy.desc", args: "--split 1+s --tlsrec 3+s"),
-        BypassPreset(id: "discord", name: "Discord", localizedNameKey: "preset.discord", icon: "message", descriptionKey: "preset.discord.desc", args: "--disorder 1 --split 1+s --auto=torst"),
-        BypassPreset(id: "stealth", name: "Stealth", localizedNameKey: "preset.stealth", icon: "eye.trianglebadge.exclamationmark", descriptionKey: "preset.stealth.desc", args: "--tlsrec 1+s --auto=torst"),
-        BypassPreset(id: "oob", name: "OOB", localizedNameKey: "preset.oob", icon: "arrow.up.message", descriptionKey: "preset.oob.desc", args: "--oob 3+s --split 1"),
-        BypassPreset(id: "light", name: "Light", localizedNameKey: "preset.light", icon: "leaf", descriptionKey: "preset.light.desc", args: "--split 1"),
-        BypassPreset(id: "custom", name: "Custom", localizedNameKey: "preset.custom", icon: "slider.horizontal.3", descriptionKey: "preset.custom.desc", args: "")
-    ]
+    static let presets: [BypassPreset] = BypassStrategy.allCases.map { BypassPreset(strategy: $0) }
     
     static func preset(for id: String) -> BypassPreset? {
         presets.first { $0.id == id }
@@ -88,7 +141,7 @@ class ServiceManager: ObservableObject {
     }
     
     func checkStatus() {
-        let binaryName = selectedEngine == .byedpi ? "ciadpi" : "spoof-dpi"
+        let binaryName = selectedEngine.dependency.binaryName
         
         DispatchQueue.global(qos: .userInitiated).async {
             let process = Process()
@@ -185,7 +238,7 @@ class ServiceManager: ObservableObject {
             return
         }
         
-        let binaryName = selectedEngine == .byedpi ? "ciadpi" : "spoof-dpi"
+        let binaryName = selectedEngine.dependency.binaryName
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
         process.arguments = ["-x", binaryName]

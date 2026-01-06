@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ServiceManager.shared.disableSystemProxy()
         
         // 2. Kill all binary engines forcefully
-        let binaries = ["ciadpi", "cloudflared", "spoof-dpi"]
+        let binaries = Dependency.allCases.map { $0.binaryName }
         for binary in binaries {
             let killTask = Process()
             killTask.executableURL = URL(fileURLWithPath: "/usr/bin/killall")

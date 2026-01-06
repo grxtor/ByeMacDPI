@@ -253,15 +253,16 @@ struct ByeDPITabView: View {
                 GridItem(.flexible(), spacing: 10),
                 GridItem(.flexible(), spacing: 10)
             ], spacing: 10) {
-                ForEach(PresetManager.presets) { preset in
+                ForEach(BypassStrategy.allCases) { strategy in
+                    let preset = BypassPreset(strategy: strategy)
                     PresetButton(
                         preset: preset,
-                        isActive: activePreset == preset.id,
+                        isActive: activePreset == strategy.id,
                         cardBg: cardBg,
                         textColor: textColor
                     ) {
                         withAnimation(.spring(response: 0.3)) {
-                            activePreset = preset.id
+                            activePreset = strategy.id
                             if service.isRunning {
                                 service.stopService {
                                     service.startService()

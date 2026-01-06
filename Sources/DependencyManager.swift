@@ -68,7 +68,8 @@ enum Dependency: String, CaseIterable, Identifiable {
     
     var binaryName: String {
         switch self {
-        case .spoofdpi: return "spoof-dpi"
+        case .spoofdpi: return "spoofdpi"
+        case .ciadpi: return "ciadpi"
         default: return rawValue
         }
     }
@@ -286,8 +287,16 @@ class DependencyManager: ObservableObject {
         let enumerator = fileManager.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles])
         
         while let fileURL = enumerator?.nextObject() as? URL {
-            if fileURL.lastPathComponent == name {
-                return fileURL
+            let fileName = fileURL.lastPathComponent.lowercased()
+            let targetName = name.lowercased()
+            
+            // Match exact name, or name with architecture suffix (e.g. ciadpi-x86_64, spoof-dpi-darwin-arm64)
+            if fileName == targetName || fileName.hasPrefix(targetName + "-") || fileName.hasPrefix(targetName + "_") {
+                // Verify it's not a documentation or metadata file
+                let ext = fileURL.pathExtension.lowercased()
+                if ext == "" || ext == "exe" {
+                    return fileURL
+                }
             }
         }
         return nil
