@@ -18,7 +18,7 @@ class ByeDPIEngine: ProxyEngine {
         var args = ["-i", "127.0.0.1", "-p", port]
         
         if let preset = preset {
-            args += preset.arguments.split(separator: " ").map(String.init)
+            args += preset.args.split(separator: " ").map(String.init)
         }
         
         process = Process()
@@ -36,7 +36,7 @@ class ByeDPIEngine: ProxyEngine {
         try process?.run()
         isRunning = true
         
-        print("[ByeDPIEngine] 🚀 Started on port \(port) with preset \(preset?.rawValue ?? "none")")
+        print("[ByeDPIEngine] 🚀 Started on port \(port) with preset \(preset?.id ?? "none")")
     }
     
     func stop() {

@@ -143,6 +143,14 @@ class ServiceManager: ObservableObject {
         }
     }
     
+    func restartService() {
+        stopService {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.startService()
+            }
+        }
+    }
+    
     func stopService(completion: (() -> Void)? = nil) {
         guard !isProcessing else { return }
         withAnimation { isProcessing = true }
@@ -228,6 +236,19 @@ class ServiceManager: ObservableObject {
     
     func launchDiscord() {
         let args = ["-a", "/Applications/Discord.app", "--args", "--proxy-server=\(selectedEngine == .byedpi ? "socks5" : "http")://127.0.0.1:\(byedpiPort)", "--ignore-certificate-errors"]
+        runCommand("/usr/bin/open", args: args)
+    }
+    
+    func launchVesktop() {
+        let args = ["-a", "/Applications/Vesktop.app", "--args", "--proxy-server=\(selectedEngine == .byedpi ? "socks5" : "http")://127.0.0.1:\(byedpiPort)", "--ignore-certificate-errors"]
+        runCommand("/usr/bin/open", args: args)
+    }
+    
+    func launchCustomApp(path: String, customArgs: String = "") {
+        var args = ["-a", path, "--args", "--proxy-server=\(selectedEngine == .byedpi ? "socks5" : "http")://127.0.0.1:\(byedpiPort)"]
+        if !customArgs.isEmpty {
+            args += customArgs.split(separator: " ").map(String.init)
+        }
         runCommand("/usr/bin/open", args: args)
     }
 }
